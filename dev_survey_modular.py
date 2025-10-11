@@ -43,10 +43,10 @@ def main():
     # Route to the appropriate page based on session state
     page_routes = {
         0: consent_page,
-        1: work_satisfaction_page,
-        2: developer_experience_page,
-        3: ai_tools_page,
-        4: self_efficacy_page,
+        1: developer_experience_page,
+        2: self_efficacy_page,
+        3: work_satisfaction_page,
+        4: ai_tools_page,
         5: task_estimation_page,
         6: completion_page
     }

@@ -6,6 +6,7 @@ import io
 import wave
 import streamlit as st
 import openai
+from supabase import create_client
 from survey_questions import (
     SATISFACTION_QUESTIONS,
     SATISFACTION_SLIDER_OPTIONS,
@@ -21,8 +22,20 @@ from survey_questions import (
 # Initialize OpenAI client
 openai_client = openai.OpenAI(api_key=st.secrets.get('OPENAI_KEY', ''))
 
-# Demo mode for testing
-DEMO_MODE = str(st.secrets.get('DEMO_MODE', 'false')).lower() in ('1', 'true', 'yes', 'on')
+# Initialize Supabase client
+if st.secrets['MODE'] == 'dev':
+    supabase_client = create_client(
+        st.secrets['SUPABASE_DEV_URL'],
+        st.secrets['SUPABASE_DEV_KEY'],
+    )
+elif st.secrets['MODE'] == 'prod':
+    supabase_client = create_client(
+        st.secrets["SUPABASE_URL"],
+        st.secrets["SUPABASE_KEY"],
+    )
+else:
+    supabase_client = None
+
 
 
 def get_audio_duration(file):
@@ -174,9 +187,9 @@ def work_satisfaction_page():
     st.header("Work Satisfaction")
     st.markdown("""
      <p style='font-size:18px; font-weight: 600; margin-bottom: 2rem'>
-     Rate how satisfied you are with the following aspects of your work as a developer.
-     </p>
-     """, unsafe_allow_html=True)
+        Rate how satisfied you are with the following aspects of your work as a developer.
+        </p>
+        """, unsafe_allow_html=True)
     
     # Load previous responses if they exist
     previous_responses = st.session_state['survey_responses'].get('satisfaction', {})
@@ -223,7 +236,7 @@ def developer_experience_page():
     """Display the developer experience page."""
     st.header("Developer Experience")
     st.markdown("""
-        <p style='font-size:18px; margin-bottom: 0.75rem;'>
+        <p style='font-size:18px; font-weight: 600; margin-bottom: 2rem'>
         Tell us about your background and experience.
         </p>
         """, unsafe_allow_html=True)
@@ -232,7 +245,7 @@ def developer_experience_page():
     previous_experience = st.session_state['survey_responses'].get('professional_experience', None)
     previous_occupation = st.session_state['survey_responses'].get('occupation_description', '')
     
-    st.markdown("<p style='font-size:18px; font-weight:500; margin-bottom:0.5rem;'>How many years of professional development experience do you have?</p>", 
+    st.markdown("<p style='font-size:18px; font-weight:400; margin-bottom:0.5rem;'>How many years of professional development experience do you have?</p>", 
                unsafe_allow_html=True)
     
     # Set index based on previous response
@@ -250,7 +263,7 @@ def developer_experience_page():
     
     st.divider()
     
-    st.markdown("<p style='font-size:18px; font-weight:500; margin-bottom:0.5rem;'>Please briefly describe your current occupation.</p>", 
+    st.markdown("<p style='font-size:18px; font-weight:400; margin-bottom:0.5rem;'>Please briefly describe your current occupation.</p>", 
                unsafe_allow_html=True)
     occupation_description = st.text_area(
         label="",
@@ -288,7 +301,7 @@ def ai_tools_page():
     st.header("AI Tool Experience")
     
     st.markdown("""
-        <p style='font-size:18px; margin-bottom: 0.75rem;'>
+        <p style='font-size:18px; font-weight: 600; margin-bottom: 2rem'>
         Tell us about your experience with AI tools.
         </p>
         """, unsafe_allow_html=True)
@@ -298,7 +311,7 @@ def ai_tools_page():
     
     responses = {}
     for idx, (key, question) in enumerate(AI_EXPERIENCE_QUESTIONS.items()):
-        st.markdown(f"<p style='font-size:18px; font-weight:500; margin-bottom:0.5rem;'>{question}</p>", 
+        st.markdown(f"<p style='font-size:18px; font-weight:400; margin-bottom:0.5rem;'>{question}</p>", 
                    unsafe_allow_html=True)
         
         # Get previous value or default to None
@@ -383,50 +396,117 @@ def self_efficacy_page():
 
 
 def task_estimation_page():
-    """Display the task estimation page."""
-    st.header("Task Estimation")
+    """Display the repository assignment page."""
+    st.header("Repository Assignment")
     
     st.markdown("""
-        <p style='font-size:18px'>
-        Please estimate your time spent on coding tasks before and after using AI tools.
+        <p style='font-size:18px; font-weight: 600; margin-bottom: 2rem'>
+        You will be assigned a repository to work on for this study.
         </p>
         """, unsafe_allow_html=True)
     
     # Load previous responses if they exist
-    previous_task_est = st.session_state['survey_responses'].get('task_estimation', {})
+    previous_participant_id = st.session_state['survey_responses'].get('participant_id', '')
+    previous_repo = st.session_state['survey_responses'].get('assigned_repository', None)
     
-    hours_before = st.number_input(
-        "**How many hours per week did you spend on coding tasks BEFORE using AI tools?**",
-        min_value=0,
-        max_value=168,
-        step=1,
-        value=previous_task_est.get('hours_before', 0),
-        key="hours_before"
+    st.markdown("<p style='font-size:18px; font-weight:400; margin-bottom:0.5rem;'>Please enter your Participant ID:</p>", 
+               unsafe_allow_html=True)
+    participant_id = st.text_input(
+        label="",
+        value=previous_participant_id,
+        key="participant_id_input",
+        placeholder="Enter your participant ID"
     )
     
-    hours_after = st.number_input(
-        "**How many hours per week do you spend on coding tasks AFTER using AI tools?**",
-        min_value=0,
-        max_value=168,
-        step=1,
-        value=previous_task_est.get('hours_after', 0),
-        key="hours_after"
-    )
+    st.divider()
     
-    quality_change = st.select_slider(
-        "**Has the quality of your work changed after using AI tools?**",
-        options=QUALITY_CHANGE_OPTIONS,
-        value=previous_task_est.get('quality_change', "Not selected"),
-        key="quality_change"
-    )
+    # Show assigned repository from database
+    assigned_repo = None
+    if previous_repo:
+        assigned_repo = previous_repo
+        st.success(f"You have been assigned repository: **{assigned_repo}**")
+    else:
+        if participant_id:
+            try:
+                # Query all columns to see what's in the table
+                response = supabase_client.table('participant-repos').select('*').eq('participant_id', participant_id).execute()
+                print(f"Query for participant_id='{participant_id}'")
+                print(f"Response: {response}")
+                
+                if response.data and len(response.data) > 0:
+                    # Try to get repository from response
+                    row = response.data[0]
+                    print(f"Row data: {row}")
+                    
+                    # Check different possible column names
+                    if 'repository' in row:
+                        assigned_repo = row['repository']
+                    elif 'repo' in row:
+                        assigned_repo = row['repo']
+                    elif 'repository_name' in row:
+                        assigned_repo = row['repository_name']
+                    else:
+                        st.error(f"Repository column not found. Available columns: {list(row.keys())}")
+                        assigned_repo = None
+                    
+                    if assigned_repo:
+                        st.session_state['survey_responses']['assigned_repository'] = assigned_repo
+                        st.success(f"You have been assigned repository: **{assigned_repo}**")
+                else:
+                    # Try to get all records to debug
+                    all_records = supabase_client.table('participant-repos').select('participant_id').limit(5).execute()
+                    print(f"Sample participant IDs in table: {[r.get('participant_id') for r in all_records.data if all_records.data]}")
+                    st.error(f"⚠️ Participant ID '{participant_id}' not found in the system. Please check your ID and try again.")
+                    st.info("Note: Participant IDs are case-sensitive. Please ensure you entered it exactly as provided.")
+                    assigned_repo = None
+            except Exception as e:
+                st.error(f"Error retrieving repository assignment: {str(e)}")
+                print(f"Exception: {e}")
+                import traceback
+                traceback.print_exc()
+                assigned_repo = None
+        else:
+            st.warning("Please enter your Participant ID to receive your repository assignment.")
     
-    additional_comments = st.text_area(
-        "**Any additional comments about how AI tools have impacted your work? (Optional)**",
-        value=previous_task_est.get('additional_comments', ''),
-        key="additional_comments"
-    )
+    # Show fork instructions if repository is assigned
+    if assigned_repo:
+        st.divider()
+        st.markdown("""
+            <p style='font-size:20px; font-weight: 600; margin-top: 1rem; margin-bottom: 1rem'>
+            Next Steps:
+            </p>
+            """, unsafe_allow_html=True)
+        
+        st.markdown(f"""
+            <p style='font-size:18px; margin-bottom: 0.5rem'>
+            1. Go to <a href="https://github.com/{assigned_repo}" target="_blank" style="color: #0066cc;">https://github.com/{assigned_repo}</a>
+            </p>
+            <p style='font-size:16px; margin-bottom: 0.5rem'>
+            2. Click the <strong>"Fork"</strong> button in the top-right corner
+            </p>
+            <p style='font-size:16px; margin-bottom: 0.5rem'>
+            3. Create the fork in your anonymous GitHub account
+            </p>
+            <p style='font-size:16px; margin-bottom: 1rem'>
+            4. Copy and paste the URL of your forked repository below
+            </p>
+            """, unsafe_allow_html=True)
+        
+        # Load previous forked repo URL if exists
+        previous_forked_url = st.session_state['survey_responses'].get('forked_repository_url', '')
+        
+        st.markdown("<p style='font-size:18px; font-weight:400; margin-bottom:0.5rem;'>Enter your forked repository URL:</p>", 
+                   unsafe_allow_html=True)
+        forked_repo_url = st.text_input(
+            label="",
+            value=previous_forked_url,
+            key="forked_repo_url_input",
+            placeholder="https://github.com/YOUR_USERNAME/repository-name"
+        )
+    else:
+        forked_repo_url = None
     
-    st.markdown("<div style='margin-top: 1rem;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='margin-top: 2rem;'></div>", unsafe_allow_html=True)
     t1, t2, t3 = st.columns([1, 4, 1])
     with t1:
         task_back = st.button("Back", key="task_back")
@@ -435,24 +515,25 @@ def task_estimation_page():
     
     if task_back:
         # Save responses even when going back
-        st.session_state['survey_responses']['task_estimation'] = {
-            'hours_before': hours_before,
-            'hours_after': hours_after,
-            'quality_change': quality_change,
-            'additional_comments': additional_comments
-        }
+        if participant_id:
+            st.session_state['survey_responses']['participant_id'] = participant_id
+        if assigned_repo:
+            st.session_state['survey_responses']['assigned_repository'] = assigned_repo
+        if forked_repo_url:
+            st.session_state['survey_responses']['forked_repository_url'] = forked_repo_url
         previous_page()
     elif task_submit:
-        if quality_change != "Not selected":
-            st.session_state['survey_responses']['task_estimation'] = {
-                'hours_before': hours_before,
-                'hours_after': hours_after,
-                'quality_change': quality_change,
-                'additional_comments': additional_comments
-            }
+        if participant_id and assigned_repo and forked_repo_url:
+            st.session_state['survey_responses']['participant_id'] = participant_id
+            st.session_state['survey_responses']['assigned_repository'] = assigned_repo
+            st.session_state['survey_responses']['forked_repository_url'] = forked_repo_url
             next_page()
-        else:
-            st.error("Please answer all required questions before proceeding.")
+        elif not participant_id:
+            st.error("Please enter your Participant ID to proceed.")
+        elif not assigned_repo:
+            st.error("Please wait for your repository assignment to load.")
+        elif not forked_repo_url:
+            st.error("Please enter the URL of your forked repository to proceed.")
 
 
 def completion_page():
@@ -463,15 +544,32 @@ def completion_page():
         <p style='font-size:20px'>
         Thank you for completing the survey! Your responses have been recorded.
         </p>
-        
-        <p style='font-size:18px'>
-        Your insights will help us better understand how AI tools are impacting 
-        software development practices.
-        </p>
         """, unsafe_allow_html=True)
     
     st.success("✅ Survey completed successfully!")
     
-    with st.expander("View your responses"):
+    # Display assigned repository
+    participant_id = st.session_state['survey_responses'].get('participant_id', 'N/A')
+    assigned_repo = st.session_state['survey_responses'].get('assigned_repository', 'N/A')
+    forked_repo_url = st.session_state['survey_responses'].get('forked_repository_url', 'N/A')
+    
+    st.markdown("---")
+    st.markdown("""
+        <p style='font-size:18px; font-weight: 600; margin-top: 2rem; margin-bottom: 1rem'>
+        Your Assignment Details:
+        </p>
+        """, unsafe_allow_html=True)
+    
+    st.markdown(f"""
+        <p style='font-size:18px'>
+        <strong>Participant ID:</strong> {participant_id}<br>
+        <strong>Assigned Repository:</strong> {assigned_repo}<br>
+        <strong>Your Forked Repository:</strong> <a href="{forked_repo_url}" target="_blank">{forked_repo_url}</a>
+        </p>
+        """, unsafe_allow_html=True)
+    
+    st.info("📝 Please save these details for the next phase of the study. You will be working on your forked repository.")
+    
+    with st.expander("View all your responses"):
         st.json(st.session_state['survey_responses'])
 
