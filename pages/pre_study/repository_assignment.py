@@ -3,7 +3,7 @@ Repository assignment page for the survey.
 """
 
 import streamlit as st
-from survey_components import page_header, text_input_question, navigation_buttons
+from survey_components import page_header, navigation_buttons, text_input_question
 from survey_utils import save_and_navigate
 from survey_data import get_repository_assignment
 
@@ -15,17 +15,13 @@ def repository_assignment_page():
         "You will be assigned a repository to work on for this study."
     )
     
-    # Load previous responses
-    previous_participant_id = st.session_state['survey_responses'].get('participant_id', '')
+    # Get participant ID from session state (entered on first page)
+    participant_id = st.session_state['survey_responses'].get('participant_id', '')
     previous_repo = st.session_state['survey_responses'].get('assigned_repository', None)
     
-    # Participant ID input
-    participant_id = text_input_question(
-        "Please enter your Participant ID:",
-        "participant_id_input",
-        previous_participant_id,
-        placeholder="Enter your participant ID"
-    )
+    # Display participant ID
+    if participant_id:
+        st.info(f"**Participant ID:** {participant_id}")
     
     st.divider()
     
@@ -55,7 +51,7 @@ def repository_assignment_page():
                     st.error(result['error'])
                 assigned_repo = None
         else:
-            st.warning("Please enter your Participant ID to receive your repository assignment.")
+            st.error("⚠️ Participant ID not found. Please go back and enter your Participant ID on the first page.")
     
     # Show fork instructions if repository is assigned
     forked_repo_url = None
@@ -96,12 +92,10 @@ def repository_assignment_page():
     
     # Validation function
     def validate():
-        return participant_id and assigned_repo and forked_repo_url
+        return assigned_repo and forked_repo_url
     
     def get_error_message():
-        if not participant_id:
-            return "Please enter your Participant ID to proceed."
-        elif not assigned_repo:
+        if not assigned_repo:
             return "Please wait for your repository assignment to load."
         elif not forked_repo_url:
             return "Please enter the URL of your forked repository to proceed."
@@ -109,15 +103,13 @@ def repository_assignment_page():
     
     # Navigation
     navigation_buttons(
-        on_back=lambda: save_and_navigate('back',
-                                          participant_id=participant_id,
-                                          assigned_repository=assigned_repo,
-                                          forked_repository_url=forked_repo_url),
+        # on_back=lambda: save_and_navigate('back',
+        #                                   assigned_repository=assigned_repo,
+        #                                   forked_repository_url=forked_repo_url),
         on_next=lambda: save_and_navigate('next',
-                                          participant_id=participant_id,
                                           assigned_repository=assigned_repo,
                                           forked_repository_url=forked_repo_url),
-        back_key="task_back",
+        # back_key="task_back",
         next_key="task_next",
         validation_fn=validate,
         validation_error=get_error_message()

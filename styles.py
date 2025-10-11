@@ -99,6 +99,32 @@ label, .stMarkdown label {
     margin-bottom: 0rem;
 }
 
+.stButton > button[kind="primary"],
+    button[kind="primary"] {
+        background-color: #28a745 !important;
+        border-color: #28a745 !important;
+        color: white !important;
+    }
+    
+.stButton > button[kind="primary"]:hover,
+button[kind="primary"]:hover {
+    background-color: #218838 !important;
+    border-color: #1e7e34 !important;
+    color: white !important;
+}
+.stButton > button[kind="primary"]:active,
+button[kind="primary"]:active {
+    background-color: #1e7e34 !important;
+    border-color: #1c7430 !important;
+}
+.stButton > button[kind="primary"]:focus:not(:active),
+button[kind="primary"]:focus:not(:active) {
+    background-color: #28a745 !important;
+    border-color: #28a745 !important;
+    box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.5) !important;
+}
+
+
 </style>
 """
 

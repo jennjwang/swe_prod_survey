@@ -11,7 +11,7 @@ from survey_questions import CODE_EXPERIENCE_OPTIONS
 def code_experience_page():
     """Display the code experience question page."""
     page_header(
-        "Code Experience",
+        "Codebase Familiarity",
         "Tell us about your experience with the assigned repository."
     )
     
