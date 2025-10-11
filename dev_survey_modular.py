@@ -6,13 +6,13 @@ This is the modular version with separated concerns.
 import streamlit as st
 import streamlit.components.v1 as components
 from styles import SURVEY_STYLES
-from survey_pages import (
+from pages import (
     consent_page,
-    work_satisfaction_page,
     developer_experience_page,
-    ai_tools_page,
     self_efficacy_page,
-    task_estimation_page,
+    work_satisfaction_page,
+    ai_tools_page,
+    repository_assignment_page,
     code_experience_page,
     completion_page
 )
@@ -48,7 +48,7 @@ def main():
         2: self_efficacy_page,
         3: work_satisfaction_page,
         4: ai_tools_page,
-        5: task_estimation_page,
+        5: repository_assignment_page,
         6: code_experience_page,
         7: completion_page
     }

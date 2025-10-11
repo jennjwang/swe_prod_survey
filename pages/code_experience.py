@@ -1,5 +1,5 @@
 """
-Code experience page - refactored example.
+Code experience page for the survey.
 """
 
 import streamlit as st
@@ -32,22 +32,16 @@ def code_experience_page():
         previous_code_exp
     )
     
-    # Navigation
+    # Validation function
     def validate():
         return code_experience is not None
     
-    def on_back():
-        save_and_navigate('back', code_experience=code_experience)
-    
-    def on_next():
-        save_and_navigate('next', code_experience=code_experience)
-    
+    # Navigation
     navigation_buttons(
-        on_back=on_back,
-        on_next=on_next,
+        on_back=lambda: save_and_navigate('back', code_experience=code_experience),
+        on_next=lambda: save_and_navigate('next', code_experience=code_experience),
         back_key="code_exp_back",
         next_key="code_exp_next",
         validation_fn=validate,
         validation_error="Please select your code experience level to proceed."
     )
-

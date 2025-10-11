@@ -90,9 +90,10 @@ label, .stMarkdown label {
 
 /* Alternative: target ALL divs in slider for max coverage */
 .stSlider [data-baseweb="slider"] { margin-top: 0rem !important; margin-bottom: 0rem !important; }
-.stSlider [data-baseweb="slider"] div { font-size: 16px; color: inherit;}
-.stSlider span{
+.stSlider [data-baseweb="slider"] div { font-size: 14px; color: inherit;}
+.stSlider span {
     color: gray !important;
+}
 
 .stElementContainer {
     margin-bottom: 0rem;

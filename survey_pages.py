@@ -3,6 +3,7 @@ Individual page components for the developer survey.
 
 TODOs:
 - [ ] Save response based on participant id
+- [ ] Take in the participant id as the first question
 - [ ] Add a progress bar
 - [ ] Randomly assign an issue to the participant
 - [ ] Store participant progress in the database (e.g., if they have already completed the pre-study survey, which issues are they working on)
