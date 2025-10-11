@@ -3,3 +3,4 @@ deduplicated_tasks.csv
 updated_occupation_categories.csv
 survey.py
 __pycache__/*
+pages/__pycache__/*
