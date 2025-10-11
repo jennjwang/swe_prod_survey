@@ -434,24 +434,27 @@ def task_estimation_page():
                 print(f"Response: {response}")
                 
                 if response.data and len(response.data) > 0:
-                    # Try to get repository from response
+                    # Get repository info from response
                     row = response.data[0]
                     print(f"Row data: {row}")
                     
-                    # Check different possible column names
-                    if 'repository' in row:
-                        assigned_repo = row['repository']
-                    elif 'repo' in row:
-                        assigned_repo = row['repo']
-                    elif 'repository_name' in row:
-                        assigned_repo = row['repository_name']
-                    else:
-                        st.error(f"Repository column not found. Available columns: {list(row.keys())}")
-                        assigned_repo = None
+                    # Extract repository details from new schema
+                    owner = row.get('repository_owner')
+                    repository_name = row.get('repository_name')
+                    repository_url = row.get('repository_url')
                     
-                    if assigned_repo:
+                    print(f"Owner: {owner}")
+                    print(f"Repository name: {repository_name}")
+                    print(f"Repository URL: {repository_url}")
+                    
+                    if owner and repository_name:
+                        assigned_repo = f"{owner}/{repository_name}"
                         st.session_state['survey_responses']['assigned_repository'] = assigned_repo
+                        st.session_state['survey_responses']['repository_url'] = repository_url
                         st.success(f"You have been assigned repository: **{assigned_repo}**")
+                    else:
+                        st.error(f"Repository information incomplete. Available columns: {list(row.keys())}")
+                        assigned_repo = None
                 else:
                     # Try to get all records to debug
                     all_records = supabase_client.table('participant-repos').select('participant_id').limit(5).execute()
@@ -470,6 +473,9 @@ def task_estimation_page():
     
     # Show fork instructions if repository is assigned
     if assigned_repo:
+        # Get the repository URL from session state
+        repo_url = st.session_state['survey_responses'].get('repository_url', f"https://github.com/{assigned_repo}")
+        
         st.divider()
         st.markdown("""
             <p style='font-size:20px; font-weight: 600; margin-top: 1rem; margin-bottom: 1rem'>
@@ -479,15 +485,15 @@ def task_estimation_page():
         
         st.markdown(f"""
             <p style='font-size:18px; margin-bottom: 0.5rem'>
-            1. Go to <a href="https://github.com/{assigned_repo}" target="_blank" style="color: #0066cc;">https://github.com/{assigned_repo}</a>
+            1. Go to <a href="{repo_url}" target="_blank" style="color: #0066cc;">{repo_url}</a>
             </p>
-            <p style='font-size:16px; margin-bottom: 0.5rem'>
+            <p style='font-size:18px; margin-bottom: 0.5rem'>
             2. Click the <strong>"Fork"</strong> button in the top-right corner
             </p>
-            <p style='font-size:16px; margin-bottom: 0.5rem'>
+            <p style='font-size:18px; margin-bottom: 0.5rem'>
             3. Create the fork in your anonymous GitHub account
             </p>
-            <p style='font-size:16px; margin-bottom: 1rem'>
+            <p style='font-size:18px; margin-bottom: 1rem'>
             4. Copy and paste the URL of your forked repository below
             </p>
             """, unsafe_allow_html=True)
@@ -511,7 +517,7 @@ def task_estimation_page():
     with t1:
         task_back = st.button("Back", key="task_back")
     with t3:
-        task_submit = st.button("Submit", key="task_submit")
+        task_next = st.button("Next", key="task_next")
     
     if task_back:
         # Save responses even when going back
@@ -522,7 +528,7 @@ def task_estimation_page():
         if forked_repo_url:
             st.session_state['survey_responses']['forked_repository_url'] = forked_repo_url
         previous_page()
-    elif task_submit:
+    elif task_next:
         if participant_id and assigned_repo and forked_repo_url:
             st.session_state['survey_responses']['participant_id'] = participant_id
             st.session_state['survey_responses']['assigned_repository'] = assigned_repo
@@ -534,6 +540,70 @@ def task_estimation_page():
             st.error("Please wait for your repository assignment to load.")
         elif not forked_repo_url:
             st.error("Please enter the URL of your forked repository to proceed.")
+
+
+def code_experience_page():
+    """Display the code experience question page."""
+    st.header("Code Experience")
+    
+    st.markdown("""
+        <p style='font-size:18px; font-weight: 600; margin-bottom: 2rem'>
+        Tell us about your experience with the assigned repository.
+        </p>
+        """, unsafe_allow_html=True)
+    
+    # Get assigned repository info for context
+    assigned_repo = st.session_state['survey_responses'].get('assigned_repository', 'N/A')
+    
+    if assigned_repo != 'N/A':
+        st.info(f"**Assigned Repository:** {assigned_repo}")
+        st.markdown("<div style='margin-bottom: 1.5rem;'></div>", unsafe_allow_html=True)
+    
+    # Load previous code experience response if exists
+    previous_code_exp = st.session_state['survey_responses'].get('code_experience', None)
+    
+    st.markdown("<p style='font-size:18px; font-weight:400; margin-bottom:0.5rem;'>How many lines of code, approximately, have you personally written or modified in this codebase?</p>", 
+               unsafe_allow_html=True)
+    
+    CODE_EXPERIENCE_OPTIONS = [
+        "Fewer than 100",
+        "100–1,000",
+        "1,001–10,000",
+        "10,001–50,000",
+        "More than 50,000"
+    ]
+    
+    # Set index based on previous response
+    if previous_code_exp and previous_code_exp in CODE_EXPERIENCE_OPTIONS:
+        default_code_index = CODE_EXPERIENCE_OPTIONS.index(previous_code_exp)
+    else:
+        default_code_index = None
+    
+    code_experience = st.selectbox(
+        label="",
+        options=CODE_EXPERIENCE_OPTIONS,
+        index=default_code_index,
+        key="code_experience_select"
+    )
+    
+    st.markdown("<div style='margin-top: 2rem;'></div>", unsafe_allow_html=True)
+    c1, c2, c3 = st.columns([1, 4, 1])
+    with c1:
+        code_exp_back = st.button("Back", key="code_exp_back")
+    with c3:
+        code_exp_next = st.button("Next", key="code_exp_next")
+    
+    if code_exp_back:
+        # Save response even when going back
+        if code_experience:
+            st.session_state['survey_responses']['code_experience'] = code_experience
+        previous_page()
+    elif code_exp_next:
+        if code_experience:
+            st.session_state['survey_responses']['code_experience'] = code_experience
+            next_page()
+        else:
+            st.error("Please select your code experience level to proceed.")
 
 
 def completion_page():
@@ -552,6 +622,7 @@ def completion_page():
     participant_id = st.session_state['survey_responses'].get('participant_id', 'N/A')
     assigned_repo = st.session_state['survey_responses'].get('assigned_repository', 'N/A')
     forked_repo_url = st.session_state['survey_responses'].get('forked_repository_url', 'N/A')
+    code_experience = st.session_state['survey_responses'].get('code_experience', 'N/A')
     
     st.markdown("---")
     st.markdown("""
@@ -564,7 +635,8 @@ def completion_page():
         <p style='font-size:18px'>
         <strong>Participant ID:</strong> {participant_id}<br>
         <strong>Assigned Repository:</strong> {assigned_repo}<br>
-        <strong>Your Forked Repository:</strong> <a href="{forked_repo_url}" target="_blank">{forked_repo_url}</a>
+        <strong>Your Forked Repository:</strong> <a href="{forked_repo_url}" target="_blank">{forked_repo_url}</a><br>
+        <strong>Code Experience:</strong> {code_experience}
         </p>
         """, unsafe_allow_html=True)
     

@@ -13,6 +13,7 @@ from survey_pages import (
     ai_tools_page,
     self_efficacy_page,
     task_estimation_page,
+    code_experience_page,
     completion_page
 )
 
@@ -48,7 +49,8 @@ def main():
         3: work_satisfaction_page,
         4: ai_tools_page,
         5: task_estimation_page,
-        6: completion_page
+        6: code_experience_page,
+        7: completion_page
     }
     
     current_page = st.session_state.get('page', 0)
