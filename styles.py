@@ -46,6 +46,8 @@ hr {
 .stButton > button {
     font-size: 18px;
     padding: 8px 30px;
+    margin-top: 2rem;
+    margin-bottom: 2rem;
 }
 
 /* ========================================

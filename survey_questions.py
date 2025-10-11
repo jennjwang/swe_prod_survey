@@ -84,3 +84,11 @@ QUALITY_CHANGE_OPTIONS = [
     "Significantly increased"
 ]
 
+# Code experience options
+CODE_EXPERIENCE_OPTIONS = [
+    "Fewer than 100",
+    "100–1,000",
+    "1,001–10,000",
+    "10,001–50,000",
+    "More than 50,000"
+]
