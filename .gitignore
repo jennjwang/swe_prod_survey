@@ -1,0 +1,5 @@
+.streamlit/*
+deduplicated_tasks.csv
+updated_occupation_categories.csv
+survey.py
+__pycache__/*

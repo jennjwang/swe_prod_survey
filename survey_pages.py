@@ -12,8 +12,8 @@ from survey_questions import (
     EXPERIENCE_OPTIONS,
     SELF_EFFICACY_QUESTIONS,
     SELF_EFFICACY_OPTIONS,
-    AI_FREQUENCY_QUESTIONS,
-    FREQUENCY_OPTIONS,
+    AI_EXPERIENCE_QUESTIONS,
+    AI_HOURS_OPTIONS,
     TASK_ESTIMATION_QUESTIONS,
     QUALITY_CHANGE_OPTIONS
 )
@@ -256,7 +256,8 @@ def developer_experience_page():
         label="",
         value=previous_occupation,
         key="occupation_description",
-        height=100
+        height=100,
+        placeholder="1-2 sentences to describe your work."
     )
     
     st.markdown("<div style='margin-top: 1rem;'></div>", unsafe_allow_html=True)
@@ -283,33 +284,40 @@ def developer_experience_page():
 
 
 def ai_tools_page():
-    """Display the AI tools usage page."""
-    st.header("AI Tool Usage")
+    """Display the AI tools experience page."""
+    st.header("AI Tool Experience")
     
-    st.markdown("<p style='font-size:18px'><strong>How frequently do you use AI tools?</strong></p>", 
-               unsafe_allow_html=True)
+    st.markdown("""
+        <p style='font-size:18px; margin-bottom: 0.75rem;'>
+        Tell us about your experience with AI tools.
+        </p>
+        """, unsafe_allow_html=True)
     
     # Load previous responses if they exist
-    previous_frequency = st.session_state['survey_responses'].get('ai_frequency', {})
-    previous_tools = st.session_state['survey_responses'].get('ai_tools_used', '')
+    previous_experience = st.session_state['survey_responses'].get('ai_experience', {})
     
     responses = {}
-    for key, question in AI_FREQUENCY_QUESTIONS.items():
-        default_value = previous_frequency.get(key, "Not selected")
-        responses[key] = st.select_slider(
-            label=f"**{question}**",
-            options=FREQUENCY_OPTIONS,
-            value=default_value,
-            key=f"ai_freq_{key}"
+    for idx, (key, question) in enumerate(AI_EXPERIENCE_QUESTIONS.items()):
+        st.markdown(f"<p style='font-size:18px; font-weight:500; margin-bottom:0.5rem;'>{question}</p>", 
+                   unsafe_allow_html=True)
+        
+        # Get previous value or default to None
+        default_value = previous_experience.get(key, None)
+        if default_value and default_value in AI_HOURS_OPTIONS:
+            default_index = AI_HOURS_OPTIONS.index(default_value)
+        else:
+            default_index = None
+        
+        responses[key] = st.selectbox(
+            label="",
+            options=AI_HOURS_OPTIONS,
+            index=default_index,
+            key=f"ai_exp_{key}"
         )
-    
-    st.divider()
-    
-    ai_tools_used = st.text_area(
-        "**Which AI tools do you use regularly? (e.g., GitHub Copilot, ChatGPT, etc.)**",
-        value=previous_tools,
-        key="ai_tools_used"
-    )
+        
+        # Add divider between questions (but not after the last one)
+        if idx < len(AI_EXPERIENCE_QUESTIONS) - 1:
+            st.divider()
     
     st.markdown("<div style='margin-top: 1rem;'></div>", unsafe_allow_html=True)
     a1, a2, a3 = st.columns([1, 4, 1])
@@ -320,14 +328,11 @@ def ai_tools_page():
     
     if ai_tools_back:
         # Save responses even when going back
-        st.session_state['survey_responses']['ai_frequency'] = responses
-        if ai_tools_used:
-            st.session_state['survey_responses']['ai_tools_used'] = ai_tools_used
+        st.session_state['survey_responses']['ai_experience'] = responses
         previous_page()
     elif ai_tools_next:
-        if all(v != "Not selected" for v in responses.values()) and ai_tools_used:
-            st.session_state['survey_responses']['ai_frequency'] = responses
-            st.session_state['survey_responses']['ai_tools_used'] = ai_tools_used
+        if all(v != "Not selected" for v in responses.values()):
+            st.session_state['survey_responses']['ai_experience'] = responses
             next_page()
         else:
             st.error("Please fill out all fields before proceeding.")
@@ -338,8 +343,8 @@ def self_efficacy_page():
     st.header("Self-Efficacy Assessment")
     
     st.markdown("""
-        <p style='font-size:18px'>
-        Please rate how true the following statements are for you.
+        <p style='font-size:18px; font-weight: 600; margin-bottom: 2rem'>
+        Please rate how confident you are that you can perform each of the following tasks effectively.
         </p>
         """, unsafe_allow_html=True)
     
@@ -348,9 +353,11 @@ def self_efficacy_page():
     
     responses = {}
     for key, question in SELF_EFFICACY_QUESTIONS.items():
+        st.markdown(f"<p style='font-size:18px; margin-bottom:0rem; font-weight:400;'>{question}</p>", 
+                   unsafe_allow_html=True)
         default_value = previous_efficacy.get(key, "Not selected")
         responses[key] = st.select_slider(
-            label=f"**{question}**",
+            label="",
             options=SELF_EFFICACY_OPTIONS,
             value=default_value,
             key=f"efficacy_{key}"

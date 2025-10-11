@@ -35,35 +35,37 @@ SATISFACTION_SLIDER_OPTIONS = [
 
 # Self-efficacy questions
 SELF_EFFICACY_QUESTIONS = {
-    'problem_solving': 'I can solve most problems if I invest the necessary effort',
-    'find_solutions': 'If I am stuck on a problem, I can usually find one or more solutions',
-    'handle_unexpected': 'I can usually handle whatever comes my way'
+    'comprehension': 'I can understand and navigate unfamiliar parts of the codebase.',
+    'design': 'I can plan the steps needed to develop a program from its requirements.',
+    'implementation': 'I can write code that solves a specified problem.',
+    'debugging': 'I can identify and fix errors in a codebase.',
+    'testing': 'I can write tests to verify the correctness of a program.',
+    'cooperation': 'I can explain my design decisions clearly during code reviews.'
 }
 
 SELF_EFFICACY_OPTIONS = [
     "Not selected",
-    "1: Not at all true",
-    "2: Hardly true",
-    "3: Moderately true",
-    "4: Exactly true"
+    "1: I am not confident at all",
+    "2: I am slightly confident",
+    "3: I am moderately confident",
+    "4: I am very confident",
+    "5: I am absolutely confident"
 ]
 
 # AI tool usage questions
-AI_FREQUENCY_QUESTIONS = {
-    'debugging': 'How often do you use AI tools for debugging?',
-    'code_generation': 'How often do you use AI tools for code generation?',
-    'code_review': 'How often do you use AI tools for code review?',
-    'documentation': 'How often do you use AI tools for writing documentation?',
-    'learning': 'How often do you use AI tools for learning new concepts?'
+AI_EXPERIENCE_QUESTIONS = {
+    'llm_hours': 'Approximately how many hours had you spent using <strong>AI assistants</strong> such as ChatGPT, Claude, or Copilot?',
+    'cursor_hours': 'Approximately how many hours had you spent using <strong>Cursor</strong>?',
+    'ai_agents_hours': 'Approximately how many hours had you spent using <strong>AI coding agents</strong> such as Claude Code or Codex?'
 }
 
-FREQUENCY_OPTIONS = [
+AI_HOURS_OPTIONS = [
     "Not selected",
-    "Never",
-    "Rarely",
-    "Sometimes",
-    "Often",
-    "Always"
+    "0 hours",
+    "1–10 hours",
+    "10–100 hours",
+    "100–1000 hours",
+    ">1000 hours"
 ]
 
 # Task estimation questions
