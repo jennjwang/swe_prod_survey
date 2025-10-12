@@ -84,7 +84,6 @@ label, .stMarkdown label {
 [role="slider"] {
     width: 15px !important;
     height: 15px !important;
-    background-color: #ff4b4b !important;
     /* border: 3px solid #cc3c3c !important; */
 }
 

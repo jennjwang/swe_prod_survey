@@ -37,7 +37,7 @@ def ai_condition_questions_page():
             return
     
     page_header(
-        "AI Experience",
+        "AI Use",
         "Please answer these questions about your experience using AI for this task."
     )
     
@@ -62,7 +62,7 @@ def ai_condition_questions_page():
     
     # Speed multiplier question
     st.markdown("""
-        <p style='font-size:18px; font-weight:400; margin-top: 2rem; margin-bottom: 1rem;'>
+        <p style='font-size:18px; font-weight:400; margin-bottom: 1rem;'>
         How much did AI decrease or increase the time it took you to complete this issue?
         </p>
         """, unsafe_allow_html=True)
@@ -92,7 +92,7 @@ def ai_condition_questions_page():
     
     # Code review question
     st.markdown("""
-        <p style='font-size:18px; font-weight:400; margin-top: 2rem; margin-bottom: 1rem;'>
+        <p style='font-size:18px; font-weight:400; margin-bottom: 1rem;'>
         During this task, which best describes how you reviewed AI-generated code?
         </p>
         """, unsafe_allow_html=True)

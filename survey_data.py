@@ -647,9 +647,18 @@ def save_ai_condition_responses(participant_id: str, issue_id: int, ai_speed_mul
         print(f"Speed Multiplier: {ai_speed_multiplier}")
         print(f"Code Review Approach: {code_review_approach}")
         
+        # Validate and convert participant_id to integer
+        try:
+            participant_id_int = int(participant_id)
+        except (ValueError, TypeError) as e:
+            return {
+                'success': False,
+                'error': f"Invalid participant ID format. Participant ID must be numeric, got: '{participant_id}'"
+            }
+        
         # Insert into post-PR table
         data = {
-            'participant_id': int(participant_id),
+            'participant_id': participant_id_int,
             'issue_id': issue_id,
             'ai_speed_multiplier': ai_speed_multiplier,
             'ai_code_review_approach': code_review_approach
@@ -710,9 +719,14 @@ def check_pr_survey_completion(participant_id: str, issue_id: int):
     
     try:
         # Check if participant has a record in post-PR table for this specific issue
-        result = supabase_client.table('post-PR').select('participant_id').eq('participant_id', int(participant_id)).eq('issue_id', int(issue_id)).execute()
+        # Also verify that nasa_tlx_1 has a value (indicating survey was actually completed)
+        result = supabase_client.table('post-PR').select('participant_id, nasa_tlx_1').eq('participant_id', int(participant_id)).eq('issue_id', int(issue_id)).execute()
         
-        completed = result.data and len(result.data) > 0
+        completed = False
+        if result.data and len(result.data) > 0:
+            # Check that nasa_tlx_1 has a value (not null)
+            nasa_tlx_1_value = result.data[0].get('nasa_tlx_1')
+            completed = nasa_tlx_1_value is not None
         
         print(f"PR survey completion check for participant {participant_id}, issue {issue_id}: {completed}")
         
@@ -812,9 +826,18 @@ def save_post_issue_responses(participant_id: str, issue_id: int, responses: dic
         print(f"Issue ID: {issue_id}")
         print(f"Responses: {responses}")
         
+        # Validate and convert participant_id to integer
+        try:
+            participant_id_int = int(participant_id)
+        except (ValueError, TypeError) as e:
+            return {
+                'success': False,
+                'error': f"Invalid participant ID format. Participant ID must be numeric, got: '{participant_id}'"
+            }
+        
         # Prepare data for insertion
         data = {
-            'participant_id': int(participant_id),
+            'participant_id': participant_id_int,
             'issue_id': issue_id,
             **responses  # Spread all response fields
         }

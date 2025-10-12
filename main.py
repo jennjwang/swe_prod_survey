@@ -26,8 +26,8 @@ from pages import (
     # Post-PR pages
     ai_condition_questions_page,
     post_issue_questions_page,
-    already_completed_page,
-    completion_page
+    completion_page,
+    already_completed_page
 )
 
 
@@ -76,7 +76,7 @@ def main():
         # Post-PR section
         12: ai_condition_questions_page,     # AI condition questions (AI users only)
         13: post_issue_questions_page,       # Post-issue experience questions (all users)
-        14: already_completed_page,          # Already completed PR survey
+        14: already_completed_page,          # Already completed (redirects to completion with flag)
         15: completion_page                   # Final completion
     }
     
