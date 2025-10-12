@@ -35,15 +35,26 @@ CODE_QUALITY_OPTIONS = ["Not selected", "1 - Strongly disagree", "2", "3", "4", 
 
 
 def post_issue_questions_page():
-    """Ask post-issue experience questions for all participants."""
-    page_header(
-        "Post-Issue Experience",
-        "Please rate your experience while implementing this PR."
-    )
-    
+    """Ask post-PR experience questions for all participants."""
     # Get participant info
     participant_id = st.session_state['survey_responses'].get('participant_id', '')
     issue_id = st.session_state['survey_responses'].get('issue_id', '')
+    
+    # Check if participant has already completed post-issue questions
+    if participant_id and issue_id:
+        from survey_data import check_pr_survey_completion
+        completion_result = check_pr_survey_completion(participant_id, int(issue_id))
+        
+        if completion_result['success'] and completion_result['completed']:
+            # Already completed, redirect to already completed page
+            st.session_state['page'] = 14  # Already completed page
+            st.rerun()
+            return
+    
+    page_header(
+        "Post-PR Experience",
+        "Please rate your experience while implementing this PR."
+    )
     
     # Load previous responses
     previous_responses = st.session_state['survey_responses'].get('post_issue', {})
@@ -51,10 +62,9 @@ def post_issue_questions_page():
     # NASA-TLX Section
     st.markdown("""
         <p style='font-size:18px; font-weight:600; margin-top: 2rem; margin-bottom: 1rem;'>
-        Please rate your experience while implementing this PR. [Drawn from NASA-TLX]
+        Please rate your experience while implementing this PR.
         </p>
         <p style='font-size:16px; margin-bottom: 1.5rem;'>
-        (Scale: 1 = Very low, 7 = Very high)
         </p>
         """, unsafe_allow_html=True)
     
@@ -77,7 +87,6 @@ def post_issue_questions_page():
         Rate the following statements about the code you wrote:
         </p>
         <p style='font-size:16px; margin-bottom: 1.5rem;'>
-        (Scale: 1 = Strongly disagree, 5 = Strongly agree)
         </p>
         """, unsafe_allow_html=True)
     
@@ -139,7 +148,7 @@ def post_issue_questions_page():
                 # Save to session state
                 st.session_state['survey_responses']['post_issue'] = all_responses
                 # Save PR survey completion status
-                save_pr_survey_completion_status(participant_id, True)
+                save_pr_survey_completion_status(participant_id, int(issue_id), True)
                 # Proceed to completion
                 from survey_utils import next_page
                 next_page()

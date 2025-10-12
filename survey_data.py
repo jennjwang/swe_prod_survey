@@ -689,12 +689,14 @@ def save_ai_condition_responses(participant_id: str, issue_id: int, ai_speed_mul
         }
 
 
-def check_pr_survey_completion(participant_id: str):
+def check_pr_survey_completion(participant_id: str, issue_id: int):
     """
-    Check if a participant has already completed PR survey responses for their assigned issue.
+    Check if a participant has already completed PR survey responses for a specific issue.
+    Checks the post-PR table for existing responses.
     
     Args:
         participant_id: The participant's ID
+        issue_id: The issue's ID
         
     Returns:
         dict with 'success', 'completed' (boolean), and 'error' keys
@@ -707,15 +709,12 @@ def check_pr_survey_completion(participant_id: str):
         }
     
     try:
-        # Check if participant's assigned issue has survey_completed = true
-        result = supabase_client.table('repo-issues').select('survey_completed').eq('participant_id', int(participant_id)).execute()
+        # Check if participant has a record in post-PR table for this specific issue
+        result = supabase_client.table('post-PR').select('participant_id').eq('participant_id', int(participant_id)).eq('issue_id', int(issue_id)).execute()
         
-        completed = False
-        if result.data and len(result.data) > 0:
-            survey_completed_value = result.data[0].get('survey_completed')
-            completed = survey_completed_value is True
+        completed = result.data and len(result.data) > 0
         
-        print(f"PR survey completion check for participant {participant_id}: {completed}")
+        print(f"PR survey completion check for participant {participant_id}, issue {issue_id}: {completed}")
         
         return {
             'success': True,
@@ -732,12 +731,14 @@ def check_pr_survey_completion(participant_id: str):
         }
 
 
-def save_pr_survey_completion_status(participant_id: str, completed: bool):
+def save_pr_survey_completion_status(participant_id: str, issue_id: int, completed: bool):
     """
     Save the PR survey completion status to track participant progress.
+    Updates the repo-issues table to mark survey as completed for a specific issue.
     
     Args:
         participant_id: The participant's ID
+        issue_id: The issue's ID
         completed: Whether the participant has completed PR survey
         
     Returns:
@@ -750,23 +751,37 @@ def save_pr_survey_completion_status(participant_id: str, completed: bool):
         }
     
     try:
+        from datetime import datetime, timezone
+        
         # Update the participant's assigned issue with survey completion status
         data = {
-            'survey_completed': completed,
-            'survey_completed_at': 'now()' if completed else None
+            'survey_completed': completed
         }
         
-        result = supabase_client.table('repo-issues').update(data).eq('participant_id', int(participant_id)).execute()
+        # Add timestamp if completed
+        if completed:
+            data['survey_completed_at'] = datetime.now(timezone.utc).isoformat()
         
-        print(f"Updated PR survey completion status for participant {participant_id}: {completed}")
+        # Update by both participant_id and issue_id for precision
+        result = supabase_client.table('repo-issues').update(data).eq('participant_id', int(participant_id)).eq('issue_id', int(issue_id)).execute()
         
-        return {
-            'success': True,
-            'error': None
-        }
+        if result.data and len(result.data) > 0:
+            print(f"✅ Updated repo-issues: survey_completed={completed} for participant {participant_id}, issue {issue_id}")
+            return {
+                'success': True,
+                'error': None
+            }
+        else:
+            print(f"⚠️ No rows updated in repo-issues for participant {participant_id}, issue {issue_id}")
+            return {
+                'success': False,
+                'error': 'No matching issue found for participant'
+            }
         
     except Exception as e:
-        print(f"Error saving PR survey completion status: {e}")
+        print(f"❌ Error saving PR survey completion status: {e}")
+        import traceback
+        traceback.print_exc()
         return {
             'success': False,
             'error': f"Error saving PR survey completion status: {str(e)}"

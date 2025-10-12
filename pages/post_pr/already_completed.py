@@ -14,7 +14,7 @@ def already_completed_page():
     )
     
     st.markdown("""
-        <div style='text-align: center; margin-top: 3rem;'>
+        <div style='margin-top: 3rem;'>
             <p style='font-size:20px; margin-bottom: 2rem;'>
             Thank you for your participation!
             </p>
@@ -38,14 +38,9 @@ def already_completed_page():
         st.info(f"**Pull Request:** [{pr_url}]({pr_url})")
     
     st.markdown("""
-        <div style='text-align: center; margin-top: 3rem;'>
+        <div style='margin-top: 3rem;'>
             <p style='font-size:16px; color: #666;'>
             If you have any questions or concerns, please contact the study administrator.
             </p>
         </div>
         """, unsafe_allow_html=True)
-    
-    # Optional: Add a button to view their responses (if needed)
-    if st.button("View My Responses", key="view_responses"):
-        st.session_state['page'] = 14  # Go to completion page
-        st.rerun()

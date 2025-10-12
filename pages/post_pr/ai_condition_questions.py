@@ -21,14 +21,25 @@ CODE_REVIEW_OPTIONS = [
 
 def ai_condition_questions_page():
     """Ask AI condition-specific questions after PR submission."""
+    # Get participant info
+    participant_id = st.session_state['survey_responses'].get('participant_id', '')
+    issue_id = st.session_state['survey_responses'].get('issue_id', '')
+    
+    # Check if participant has already completed post-issue questions
+    if participant_id and issue_id:
+        from survey_data import check_pr_survey_completion
+        completion_result = check_pr_survey_completion(participant_id, int(issue_id))
+        
+        if completion_result['success'] and completion_result['completed']:
+            # Already completed, redirect to already completed page
+            st.session_state['page'] = 14  # Already completed page
+            st.rerun()
+            return
+    
     page_header(
         "AI Experience",
         "Please answer these questions about your experience using AI for this task."
     )
-    
-    # Get participant info
-    participant_id = st.session_state['survey_responses'].get('participant_id', '')
-    issue_id = st.session_state['survey_responses'].get('issue_id', '')
     
     # Check if participant is in AI condition
     if 'ai_condition_checked' not in st.session_state:
@@ -102,13 +113,37 @@ def ai_condition_questions_page():
             code_review_approach != "Not selected"
         )
     
-    # Custom save and navigate function for this page
-    def save_and_continue():
+    # Error message container (outside columns for full width)
+    error_container = st.container()
+    
+    # Navigation buttons
+    st.markdown("<div style='margin-top: 2rem;'></div>", unsafe_allow_html=True)
+    col1, col2, col3 = st.columns([1, 4, 1])
+    
+    with col1:
+        back_clicked = st.button("Back", key="ai_condition_back")
+    
+    with col3:
+        next_clicked = st.button("Next", key="ai_condition_submit")
+    
+    # Handle button clicks
+    if back_clicked:
+        # Save current responses to session state before going back
+        st.session_state['survey_responses']['ai_condition'] = {
+            'speed_multiplier': ai_speed_multiplier,
+            'code_review_approach': code_review_approach
+        }
+        from survey_utils import previous_page
+        previous_page()
+    
+    if next_clicked:
         if not validate():
-            st.error("⚠️ Please answer both questions to proceed.")
-            return
-        
-        if issue_id:
+            with error_container:
+                st.error("⚠️ Please answer both questions to proceed.")
+        elif not issue_id:
+            with error_container:
+                st.error("⚠️ Issue ID not found. Please contact the study administrator.")
+        else:
             # Save responses to database
             with st.spinner('Saving your responses...'):
                 result = save_ai_condition_responses(
@@ -129,28 +164,6 @@ def ai_condition_questions_page():
                 st.session_state['page'] = 13  # Post-issue questions page
                 st.rerun()
             else:
-                st.error(f"⚠️ Error saving responses: {result['error']}")
+                with error_container:
+                    st.error(f"⚠️ Error saving responses: {result['error']}")
                 print(f"Failed to save AI condition responses: {result['error']}")
-        else:
-            st.error("⚠️ Issue ID not found. Please contact the study administrator.")
-    
-    def save_and_go_back():
-        # Save current responses to session state before going back
-        st.session_state['survey_responses']['ai_condition'] = {
-            'speed_multiplier': ai_speed_multiplier,
-            'code_review_approach': code_review_approach
-        }
-        from survey_utils import previous_page
-        previous_page()
-    
-    # Navigation buttons
-    st.markdown("<div style='margin-top: 2rem;'></div>", unsafe_allow_html=True)
-    col1, col2, col3 = st.columns([1, 4, 1])
-    
-    with col1:
-        if st.button("Back", key="ai_condition_back"):
-            save_and_go_back()
-    
-    with col3:
-        if st.button("Next", key="ai_condition_submit"):
-            save_and_continue()

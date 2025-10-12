@@ -4,7 +4,6 @@ Individual page components for the developer survey.
 TODOs:
 - [ ] ask participant to sign into email (figure out auth with supabase)
 - [ ] map their email to a participant id instead of asking them to enter it
-- [ ] Record when the participant has finished the pre-study survey
 - [ ] Store participant progress in the database (e.g., if they have already completed the pre-study survey, go to issue assignment are they working on)
 - [ ] Depending on their progress, show relevant questions to them (e.g., if they have already completed the pre-study survey, show them the code experience question)
 """
