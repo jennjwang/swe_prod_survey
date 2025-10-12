@@ -24,9 +24,16 @@ from .task import (
 
 from .post_pr import (
     ai_condition_questions_page,
+    code_quality_page,
     post_issue_questions_page,
-    completion_page,
-    already_completed_page
+    completion_page
+)
+
+from .post_exp1 import (
+    ai_usage_page,
+    tool_preference_page,
+    post_self_efficacy_page,
+    thank_you_page
 )
 
 __all__ = [
@@ -48,7 +55,13 @@ __all__ = [
     
     # Post-PR pages
     'ai_condition_questions_page',
+    'code_quality_page',
     'post_issue_questions_page',
     'completion_page',
-    'already_completed_page'
+    'thank_you_page',
+
+    # Post-Exp1 pages
+    'ai_usage_page',
+    'tool_preference_page',
+    'post_self_efficacy_page'
 ]

@@ -185,27 +185,54 @@ def save_survey_responses(participant_id: str, responses: dict):
             'repository_url': responses.get('repository_url'),
             'forked_repository_url': responses.get('forked_repository_url'),
             'code_experience': responses.get('code_experience'),
+            'ai_help_examples': responses.get('ai_help_examples'),
         }
         
-        # Flatten self_efficacy dict
-        self_efficacy = responses.get('self_efficacy', {})
-        data['self_efficacy_comprehension'] = self_efficacy.get('comprehension')
-        data['self_efficacy_design'] = self_efficacy.get('design')
-        data['self_efficacy_implementation'] = self_efficacy.get('implementation')
-        data['self_efficacy_debugging'] = self_efficacy.get('debugging')
-        data['self_efficacy_testing'] = self_efficacy.get('testing')
-        data['self_efficacy_cooperation'] = self_efficacy.get('cooperation')
+        # Add code quality responses if they exist
+        code_quality = responses.get('code_quality', {})
+        if code_quality:
+            data.update({
+                'code_quality_readability': code_quality.get('readability'),
+                'code_quality_analyzability': code_quality.get('analyzability'),
+                'code_quality_modifiability': code_quality.get('modifiability'),
+                'code_quality_testability': code_quality.get('testability'),
+                'code_quality_stability': code_quality.get('stability'),
+                'code_quality_correctness': code_quality.get('correctness'),
+                'code_quality_compliance': code_quality.get('compliance'),
+            })
         
-        # Flatten satisfaction dict
+        # Flatten self_efficacy dict and extract numeric values
+        self_efficacy = responses.get('self_efficacy', {})
+        for key in ['comprehension', 'design', 'implementation', 'debugging', 'testing', 'cooperation']:
+            value = self_efficacy.get(key)
+            if value and isinstance(value, str) and value != "Not selected":
+                # Extract numeric part from strings like "1: I am not confident at all"
+                numeric_value = value.split(':')[0].strip()
+                try:
+                    data[f'self_efficacy_{key}'] = int(numeric_value)
+                except ValueError:
+                    data[f'self_efficacy_{key}'] = None
+            else:
+                data[f'self_efficacy_{key}'] = value
+
+        # Flatten satisfaction dict and extract numeric values
         satisfaction = responses.get('satisfaction', {})
-        data['satisfaction_abilities_use'] = satisfaction.get('abilities_use')
-        data['satisfaction_community_recognition'] = satisfaction.get('community_recognition')
-        data['satisfaction_work_alone'] = satisfaction.get('work_alone')
-        data['satisfaction_freedom_judgment'] = satisfaction.get('freedom_judgment')
-        data['satisfaction_own_methods'] = satisfaction.get('own_methods')
-        data['satisfaction_accomplishment'] = satisfaction.get('accomplishment')
-        data['satisfaction_learning'] = satisfaction.get('learning')
-        data['satisfaction_praise'] = satisfaction.get('praise')
+        for key in ['abilities_use', 'community_recognition', 'work_alone', 'freedom_judgment', 'own_methods', 'accomplishment', 'learning', 'praise']:
+            value = satisfaction.get(key)
+            if value and isinstance(value, str) and value != "Not selected":
+                # Extract numeric part from rating strings (handles both "1:" and "1 -" formats)
+                if ':' in value:
+                    numeric_value = value.split(':')[0].strip()
+                elif ' - ' in value:
+                    numeric_value = value.split(' - ')[0].strip()
+                else:
+                    numeric_value = value.strip()
+                try:
+                    data[f'satisfaction_{key}'] = int(numeric_value)
+                except ValueError:
+                    data[f'satisfaction_{key}'] = value
+            else:
+                data[f'satisfaction_{key}'] = value
         
         # Flatten ai_experience dict
         ai_experience = responses.get('ai_experience', {})
@@ -571,7 +598,7 @@ def mark_issue_completed(issue_id: int, pr_url: str = None):
 
 def check_participant_ai_condition(participant_id: str):
     """
-    Check if participant is in AI condition.
+    Check if participant is using AI tools from participant-repos table.
     
     Args:
         participant_id: The participant's ID
@@ -590,7 +617,7 @@ def check_participant_ai_condition(participant_id: str):
         print(f"=== CHECKING AI CONDITION ===")
         print(f"Participant ID: {participant_id}")
         
-        result = supabase_client.table('participant-condition').select('using_AI').eq('participant_id', participant_id).execute()
+        result = supabase_client.table('participant-repos').select('using_AI').eq('participant_id', participant_id).execute()
         
         print(f"AI condition result: {result}")
         
@@ -603,10 +630,10 @@ def check_participant_ai_condition(participant_id: str):
                 'error': None
             }
         else:
-            print(f"⚠️ No AI condition data found for participant {participant_id}")
+            print(f"⚠️ No participant-repos data found for participant {participant_id}")
             return {
                 'success': False,
-                'error': f"No AI condition data found for participant {participant_id}",
+                'error': f"No participant-repos data found for participant {participant_id}",
                 'using_ai': False
             }
         
@@ -842,11 +869,20 @@ def save_post_issue_responses(participant_id: str, issue_id: int, responses: dic
             **responses  # Spread all response fields
         }
         
-        # Use upsert to update if participant_id already exists, insert if not
-        result = supabase_client.table('post-PR').upsert(data, on_conflict='participant_id').execute()
+        # Check if record already exists, then update or insert accordingly
+        existing_record = supabase_client.table('post-PR').select('participant_id').eq('participant_id', participant_id_int).eq('issue_id', issue_id).execute()
         
-        print(f"Upsert result: {result}")
-        print(f"Data being upserted: {data}")
+        if existing_record.data and len(existing_record.data) > 0:
+            # Record exists, update it
+            print(f"Updating existing record for participant {participant_id}, issue {issue_id}")
+            result = supabase_client.table('post-PR').update(data).eq('participant_id', participant_id_int).eq('issue_id', issue_id).execute()
+        else:
+            # Record doesn't exist, insert new one
+            print(f"Inserting new record for participant {participant_id}, issue {issue_id}")
+            result = supabase_client.table('post-PR').insert(data).execute()
+        
+        print(f"Database operation result: {result}")
+        print(f"Data being saved: {data}")
         
         if result.data and len(result.data) > 0:
             print(f"✅ Successfully saved post-issue responses for participant {participant_id}")
@@ -855,15 +891,15 @@ def save_post_issue_responses(participant_id: str, issue_id: int, responses: dic
                 'error': None
             }
         else:
-            print(f"⚠️ Upsert returned empty data")
+            print(f"⚠️ Insert returned empty data")
             print(f"TROUBLESHOOTING RLS POLICY:")
             print(f"1. Check if RLS is enabled on 'post-PR' table")
-            print(f"2. Check if there's an INSERT/UPDATE policy for 'post-PR' table")
+            print(f"2. Check if there's an INSERT policy for 'post-PR' table")
             print(f"3. Try disabling RLS temporarily: ALTER TABLE \"post-PR\" DISABLE ROW LEVEL SECURITY;")
-            print(f"4. Or create a policy: CREATE POLICY \"Allow upsert\" ON \"post-PR\" FOR ALL WITH CHECK (true);")
+            print(f"4. Or create a policy: CREATE POLICY \"Allow insert\" ON \"post-PR\" FOR INSERT WITH CHECK (true);")
             return {
                 'success': False,
-                'error': f"Failed to save post-issue responses - RLS policy blocked upsert"
+                'error': f"Failed to save post-issue responses - RLS policy blocked insert"
             }
         
     except Exception as e:
@@ -876,38 +912,209 @@ def save_post_issue_responses(participant_id: str, issue_id: int, responses: dic
         }
 
 
+def save_post_exp1_responses(participant_id: str, responses: dict):
+    """
+    Save post-experience 1 responses (AttrakDiff, AI Perception, Post-task Self-Efficacy) to the database.
+    
+    Args:
+        participant_id: The participant's ID
+        responses: Dictionary of all responses
+        
+    Returns:
+        dict with 'success' and 'error' keys
+    """
+    if not supabase_client:
+        return {
+            'success': False,
+            'error': "Database connection not available"
+        }
+    
+    try:
+        print(f"=== SAVING POST-EXP1 RESPONSES ===")
+        print(f"Participant ID: {participant_id}")
+        print(f"Responses: {responses}")
+        
+        # Validate and convert participant_id to integer
+        try:
+            participant_id_int = int(participant_id)
+        except (ValueError, TypeError) as e:
+            return {
+                'success': False,
+                'error': f"Invalid participant ID format. Participant ID must be numeric, got: '{participant_id}'"
+            }
+        
+        # Prepare data for insertion
+        data = {
+            'participant_id': participant_id_int,
+            **responses  # Spread all response fields
+        }
+        
+        # Try different strategies to handle RLS policy issues
+        result = None
+        
+        # Strategy 1: Try upsert first
+        try:
+            result = supabase_client.table('post-exp1').upsert(data, on_conflict='participant_id').execute()
+            print(f"✅ Upsert successful")
+        except Exception as upsert_error:
+            print(f"⚠️ Upsert failed: {upsert_error}")
+            
+            # Strategy 2: Try insert only
+            try:
+                result = supabase_client.table('post-exp1').insert(data).execute()
+                print(f"✅ Insert successful")
+            except Exception as insert_error:
+                print(f"⚠️ Insert failed: {insert_error}")
+                
+                # Strategy 3: Try update only (in case record exists)
+                try:
+                    result = supabase_client.table('post-exp1').update(data).eq('participant_id', participant_id_int).execute()
+                    print(f"✅ Update successful")
+                except Exception as update_error:
+                    print(f"❌ All strategies failed. Update error: {update_error}")
+                    raise upsert_error  # Re-raise the original error
+        
+        print(f"Upsert result: {result}")
+        print(f"Data being upserted: {data}")
+        
+        if result.data and len(result.data) > 0:
+            print(f"✅ Successfully saved post-exp1 responses for participant {participant_id}")
+            return {
+                'success': True,
+                'error': None
+            }
+        else:
+            print(f"⚠️ Upsert returned empty data")
+            print(f"TROUBLESHOOTING RLS POLICY:")
+            print(f"1. Check if RLS is enabled on 'post-exp1' table")
+            print(f"2. Check if there's an INSERT/UPDATE policy for 'post-exp1' table")
+            print(f"3. Try disabling RLS temporarily: ALTER TABLE \"post-exp1\" DISABLE ROW LEVEL SECURITY;")
+            print(f"4. Or create a policy: CREATE POLICY \"Allow upsert\" ON \"post-exp1\" FOR ALL WITH CHECK (true);")
+            return {
+                'success': False,
+                'error': f"Failed to save post-exp1 responses - RLS policy blocked upsert"
+            }
+        
+    except Exception as e:
+        print(f"❌ ERROR saving post-exp1 responses: {e}")
+        import traceback
+        traceback.print_exc()
+        return {
+            'success': False,
+            'error': f"Error saving post-exp1 responses: {str(e)}"
+        }
+
+
 def assign_random_issue(participant_id: str, repository: str):
     """
     Randomly assign an unassigned issue to a participant from their repository.
     (Combined function that gets and assigns in one step)
-    
+
     Args:
         participant_id: The participant's ID
         repository: Repository in format "owner/repository"
-        
+
     Returns:
         dict with 'success', 'issue' (dict with url, id), and 'error' keys
     """
     # First get a random unassigned issue
     result = get_random_unassigned_issue(repository)
-    
+
     if not result['success']:
         return result
-    
+
     # Then assign it to the participant
     issue = result['issue']
     assign_result = assign_issue_to_participant(participant_id, issue['id'])
-    
+
     if not assign_result['success']:
         return {
             'success': False,
             'error': assign_result['error'],
             'issue': None
         }
-    
+
     return {
         'success': True,
         'issue': issue,
         'error': None
     }
+
+
+def check_participant_has_more_issues(participant_id: str):
+    """
+    Check if a participant has more uncompleted assigned issues.
+
+    Args:
+        participant_id: The participant's ID
+
+    Returns:
+        dict with 'success', 'has_more_issues' (boolean), 'completed_count', 'total_count', and 'error' keys
+    """
+    if not supabase_client:
+        return {
+            'success': False,
+            'error': 'Database client not initialized',
+            'has_more_issues': False,
+            'completed_count': 0,
+            'total_count': 0
+        }
+
+    try:
+        print(f"=== CHECKING FOR MORE ISSUES ===")
+        print(f"Participant ID: {participant_id}")
+
+        # Convert participant_id to int
+        try:
+            participant_id_int = int(participant_id)
+        except (ValueError, TypeError):
+            return {
+                'success': False,
+                'error': f"Invalid participant ID format: {participant_id}",
+                'has_more_issues': False,
+                'completed_count': 0,
+                'total_count': 0
+            }
+
+        # Get all issues assigned to this participant
+        all_issues = supabase_client.table('repo-issues').select('*').eq('participant_id', participant_id_int).execute()
+
+        if not all_issues.data:
+            print(f"No issues found for participant {participant_id}")
+            return {
+                'success': True,
+                'has_more_issues': False,
+                'completed_count': 0,
+                'total_count': 0,
+                'error': None
+            }
+
+        # Count completed vs total issues
+        total_count = len(all_issues.data)
+        completed_count = sum(1 for issue in all_issues.data if issue.get('is_completed') is True)
+
+        has_more = completed_count < total_count
+
+        print(f"✅ Participant {participant_id}: {completed_count}/{total_count} issues completed")
+        print(f"Has more issues: {has_more}")
+
+        return {
+            'success': True,
+            'has_more_issues': has_more,
+            'completed_count': completed_count,
+            'total_count': total_count,
+            'error': None
+        }
+
+    except Exception as e:
+        print(f"❌ ERROR checking for more issues: {e}")
+        import traceback
+        traceback.print_exc()
+        return {
+            'success': False,
+            'error': f"Error checking for more issues: {str(e)}",
+            'has_more_issues': False,
+            'completed_count': 0,
+            'total_count': 0
+        }
 

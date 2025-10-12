@@ -110,7 +110,10 @@ def issue_assignment_page():
                     # Clear preview
                     if 'preview_issue' in st.session_state:
                         del st.session_state['preview_issue']
-                    
+
+                    # Reset post-exp1 completion flag for new issue
+                    st.session_state['post_exp1_completed'] = False
+
                     # Save to session state and proceed to next page immediately
                     # (no intermediate success message to avoid glitching)
                     save_and_navigate('next',
