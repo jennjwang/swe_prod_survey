@@ -37,7 +37,7 @@ def ai_condition_questions_page():
             return
     
     page_header(
-        "AI Use",
+        "AI Usage",
         "Tell us about your experience using AI for this PR implementation."
     )
     
