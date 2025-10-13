@@ -66,7 +66,8 @@ def main():
     # Organized by survey sections: Pre-study (0-8), Task (9-11), Post-PR (12-14), Post-Exp1 (15-17), Completion (18-19)
     page_routes = {
         # Pre-study section
-        0: consent_page,                    # Consent form
+        # 0: consent_page,                    # Consent form
+        0: participant_id_page,              # (Consent temporarily disabled) Start at Participant ID
         1: participant_id_page,              # Participant ID entry
         2: developer_experience_page,        # Professional experience
         3: self_efficacy_page,               # Self-efficacy questions
@@ -97,7 +98,7 @@ def main():
     }
     
     current_page = st.session_state.get('page', 0)
-    page_function = page_routes.get(current_page, consent_page)
+    page_function = page_routes.get(current_page, participant_id_page)
     page_function()
 
 

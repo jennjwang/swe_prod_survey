@@ -11,7 +11,7 @@ from survey_data import validate_participant_id, get_participant_progress, get_r
 def participant_id_page():
     """Display the participant ID input page."""
     page_header(
-        "Welcome",
+        "The Ripple Effects of AI in Software Development",
         "Please enter your Participant ID to begin the survey."
     )
     
@@ -26,7 +26,7 @@ def participant_id_page():
         placeholder="Enter your participant ID"
     )
     
-    st.info("💡 **Note:** Your Participant ID is case-sensitive. Please enter it exactly as provided.")
+    st.info("**Note:** Your Participant ID is case-sensitive. Please enter it exactly as provided.")
     
     # Navigation
     st.markdown("<div style='margin-top: 2rem;'></div>", unsafe_allow_html=True)
