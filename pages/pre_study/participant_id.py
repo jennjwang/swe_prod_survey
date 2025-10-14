@@ -28,18 +28,11 @@ def participant_id_page():
     
     st.info("**Note:** Your Participant ID is case-sensitive. Please enter it exactly as provided.")
     
-    # Navigation
+    # Navigation - hide back button since this is the first page
     st.markdown("<div style='margin-top: 2rem;'></div>", unsafe_allow_html=True)
-    col1, col2, col3 = st.columns([1, 4, 1])
+    next_clicked = st.button("Next", key="participant_id_next")
     
-    with col1:
-        back_clicked = st.button("Back", key="participant_id_back")
-    with col3:
-        next_clicked = st.button("Next", key="participant_id_next")
-    
-    if back_clicked:
-        save_and_navigate('back', participant_id=participant_id)
-    elif next_clicked:
+    if next_clicked:
         # Basic validation first
         if not participant_id or not participant_id.strip():
             st.error("Please enter your Participant ID to proceed.")
@@ -71,8 +64,6 @@ def participant_id_page():
                             'code_experience': pre_data.get('code_experience'),
                             'ai_experience': {
                                 'llm_hours': pre_data.get('ai_experience_llm_hours'),
-                                'cursor_hours': pre_data.get('ai_experience_cursor_hours'),
-                                'ai_agents_hours': pre_data.get('ai_experience_ai_agents_hours'),
                             }
                         })
                         st.session_state['pre_study_saved'] = True
@@ -96,7 +87,8 @@ def participant_id_page():
                     if not progress['pre_study_completed']:
                         # Pre-study not completed, start from beginning
                         print("DEBUG: Pre-study not completed, starting from beginning")
-                        next_page()
+                        st.session_state['page'] = 2  # Developer experience page (page 2)
+                        st.rerun()
                     elif progress['issue_assigned']:
                         # Pre-study completed and issue assigned
                         # Check if participant has made a time estimate
@@ -132,7 +124,8 @@ def participant_id_page():
                         st.rerun()
                 else:
                     # Couldn't check progress, just proceed normally
-                    next_page()
+                    st.session_state['page'] = 2  # Developer experience page (page 2)
+                    st.rerun()
             else:
                 # ID is not valid, show error
                 st.error(f"⚠️ {validation_result['error']}")

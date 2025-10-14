@@ -193,8 +193,6 @@ def save_survey_responses(participant_id: str, responses: dict):
         # Flatten ai_experience dict
         ai_experience = responses.get('ai_experience', {})
         data['ai_experience_llm_hours'] = ai_experience.get('llm_hours')
-        data['ai_experience_cursor_hours'] = ai_experience.get('cursor_hours')
-        data['ai_experience_ai_agents_hours'] = ai_experience.get('ai_agents_hours')
         
         print(f"Prepared data for participant {participant_id}: {data}")
         
