@@ -69,24 +69,6 @@ def participant_id_page():
                             'repository_url': pre_data.get('repository_url'),
                             'forked_repository_url': pre_data.get('forked_repository_url'),
                             'code_experience': pre_data.get('code_experience'),
-                            'self_efficacy': {
-                                'comprehension': pre_data.get('self_efficacy_comprehension'),
-                                'design': pre_data.get('self_efficacy_design'),
-                                'implementation': pre_data.get('self_efficacy_implementation'),
-                                'debugging': pre_data.get('self_efficacy_debugging'),
-                                'testing': pre_data.get('self_efficacy_testing'),
-                                'cooperation': pre_data.get('self_efficacy_cooperation'),
-                            },
-                            'satisfaction': {
-                                'abilities_use': pre_data.get('satisfaction_abilities_use'),
-                                'community_recognition': pre_data.get('satisfaction_community_recognition'),
-                                'work_alone': pre_data.get('satisfaction_work_alone'),
-                                'freedom_judgment': pre_data.get('satisfaction_freedom_judgment'),
-                                'own_methods': pre_data.get('satisfaction_own_methods'),
-                                'accomplishment': pre_data.get('satisfaction_accomplishment'),
-                                'learning': pre_data.get('satisfaction_learning'),
-                                'praise': pre_data.get('satisfaction_praise'),
-                            },
                             'ai_experience': {
                                 'llm_hours': pre_data.get('ai_experience_llm_hours'),
                                 'cursor_hours': pre_data.get('ai_experience_cursor_hours'),
@@ -106,35 +88,48 @@ def participant_id_page():
                     
                     # Debug output
                     print(f"DEBUG: Progress data: {progress}")
+                    print(f"DEBUG: pre_study_completed = {progress['pre_study_completed']}")
                     print(f"DEBUG: issue_assigned = {progress['issue_assigned']}")
                     print(f"DEBUG: issue_completed = {progress['issue_completed']}")
                     
-                    # Route based on progress
-                    if progress['issue_assigned']:
+                    # Route based on progress - CHECK PRE-STUDY FIRST
+                    if not progress['pre_study_completed']:
+                        # Pre-study not completed, start from beginning
+                        print("DEBUG: Pre-study not completed, starting from beginning")
+                        next_page()
+                    elif progress['issue_assigned']:
+                        # Pre-study completed and issue assigned
+                        # Check if participant has made a time estimate
+                        issue_data = progress.get('issue_data', {})
+                        has_time_estimate = issue_data.get('participant_estimate') is not None if issue_data else False
+
                         if progress['issue_completed']:
                             # Issue is completed, check if survey is also completed
                             if progress['survey_completed']:
                                 # Both issue and survey completed, go to already completed page
                                 print("DEBUG: Routing to already completed page (both issue and survey completed)")
-                                st.session_state['page'] = 14  # Already completed page
+                                st.session_state['page'] = 14  # Completion page (page 14)
                             else:
-                                # Issue completed but survey not completed, go to AI condition questions
-                                print("DEBUG: Routing to AI condition questions page (issue completed, survey not completed)")
-                                st.session_state['page'] = 12  # AI condition questions page
+                                # Issue completed but survey not completed, go to post-issue questions
+                                print("DEBUG: Routing to post-issue questions page (issue completed, survey not completed)")
+                                st.session_state['page'] = 11  # Post-issue questions page (page 11)
                             st.rerun()  # Use st.rerun() instead of next_page() to avoid incrementing
+                        elif not has_time_estimate:
+                            # Issue assigned but no time estimate yet, go to time estimation page
+                            print("DEBUG: Routing to time estimation page (no time estimate yet)")
+                            st.session_state['page'] = 8  # Time estimation page (page 8)
+                            st.rerun()
                         else:
-                            # Issue is assigned but not completed, go to issue completion page
+                            # Issue is assigned with time estimate but not completed, go to issue completion page
                             print("DEBUG: Routing to issue completion page (issue not completed)")
-                            st.session_state['page'] = 11  # Issue completion page
+                            st.session_state['page'] = 9  # Issue completion page (page 9)
                             st.rerun()  # Use st.rerun() instead of next_page() to avoid incrementing
-                    elif progress['pre_study_completed']:
-                        # Skip to issue assignment
-                        st.info("✅ Welcome back! You've already completed the pre-study survey.")
-                        st.session_state['page'] = 8  # Pre-study complete page (will show saved message)
-                        next_page()
                     else:
-                        # Start from beginning
-                        next_page()
+                        # Pre-study completed but no issue assigned, go to issue assignment page
+                        st.info("✅ Welcome back! You've already completed the pre-study survey.")
+                        print("DEBUG: Routing to issue assignment page (no issue assigned yet)")
+                        st.session_state['page'] = 7  # Issue assignment page
+                        st.rerun()
                 else:
                     # Couldn't check progress, just proceed normally
                     next_page()

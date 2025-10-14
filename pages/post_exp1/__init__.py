@@ -1,16 +1,14 @@
 """
 Post-experience 1 survey pages package.
-Contains pages for AI usage, tool preference, and post-task self-efficacy.
+Contains pages for study validation, AI usage, and thank you.
 """
 
+from .study_val import study_val_page
 from .ai_usage import ai_usage_page
-from .tool_preference import tool_preference_page
-from .post_self_efficacy import post_self_efficacy_page
 from .thank_you import thank_you_page
 
 __all__ = [
+    'study_val_page',
     'ai_usage_page',
-    'tool_preference_page',
-    'post_self_efficacy_page',
     'thank_you_page'
 ]

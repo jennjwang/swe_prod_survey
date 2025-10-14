@@ -11,8 +11,6 @@ from pages import (
     consent_page,
     participant_id_page,
     developer_experience_page,
-    self_efficacy_page,
-    work_satisfaction_page,
     ai_tools_page,
     repository_assignment_page,
     code_experience_page,
@@ -25,13 +23,11 @@ from pages import (
 
     # Post-PR pages
     ai_condition_questions_page,
-    code_quality_page,
     post_issue_questions_page,
 
     # Post-Exp1 pages
+    study_val_page,
     ai_usage_page,
-    tool_preference_page,
-    post_self_efficacy_page,
 
     # Completion pages
     completion_page,
@@ -63,38 +59,34 @@ def main():
     initialize_session_state()
     
     # Route to the appropriate page based on session state
-    # Organized by survey sections: Pre-study (0-8), Task (9-11), Post-PR (12-14), Post-Exp1 (15-17), Completion (18-19)
+    # Organized by survey sections: Pre-study (0-6), Task (7-9), Post-PR (10-11), Post-Exp1 (12-13), Completion (14-15)
     page_routes = {
         # Pre-study section
         # 0: consent_page,                    # Consent form
         0: participant_id_page,              # (Consent temporarily disabled) Start at Participant ID
         1: participant_id_page,              # Participant ID entry
         2: developer_experience_page,        # Professional experience
-        3: self_efficacy_page,               # Self-efficacy questions
-        4: work_satisfaction_page,           # Work satisfaction questions
-        5: ai_tools_page,                    # AI tools experience
-        6: repository_assignment_page,       # Repository assignment
-        7: code_experience_page,             # Code experience questions
-        8: pre_study_complete_page,          # Pre-study completion
+        3: ai_tools_page,                    # AI tools experience
+        4: repository_assignment_page,       # Repository assignment
+        5: code_experience_page,             # Code experience questions
+        6: pre_study_complete_page,          # Pre-study completion
 
         # Task section
-        9: issue_assignment_page,            # Issue assignment
-        10: time_estimation_page,             # Time estimation
-        11: issue_completion_page,            # Issue completion & PR submission
+        7: issue_assignment_page,            # Issue assignment
+        8: time_estimation_page,             # Time estimation
+        9: issue_completion_page,            # Issue completion & PR submission
 
         # Post-PR section
-        12: ai_condition_questions_page,     # AI condition questions (AI users only)
-        13: code_quality_page,               # Code quality assessment (all users)
-        14: post_issue_questions_page,       # Post-issue experience questions (all users) + interview audio
+        10: ai_condition_questions_page,     # AI condition questions (AI users only)
+        11: post_issue_questions_page,       # Post-issue experience questions (all users) + interview audio
 
         # Post-Exp1 section
-        15: ai_usage_page,                   # AI usage (AI perception + interview questions)
-        16: tool_preference_page,            # Tool use preference (AttrakDiff + tool switching)
-        17: post_self_efficacy_page,         # Post-task self-efficacy
+        12: study_val_page,                  # Study validation (workflow comparison)
+        13: ai_usage_page,                   # AI usage (AI perception + interview questions)
 
         # Completion section
-        18: completion_page,                  # Single issue completion
-        19: thank_you_page                    # Final thank you (all issues complete)
+        14: completion_page,                 # Single issue completion
+        15: thank_you_page                   # Final thank you (all issues complete)
     }
     
     current_page = st.session_state.get('page', 0)

@@ -8,8 +8,6 @@ from .pre_study import (
     consent_page,
     participant_id_page,
     developer_experience_page,
-    self_efficacy_page,
-    work_satisfaction_page,
     ai_tools_page,
     repository_assignment_page,
     code_experience_page,
@@ -24,15 +22,13 @@ from .task import (
 
 from .post_pr import (
     ai_condition_questions_page,
-    code_quality_page,
     post_issue_questions_page,
     completion_page
 )
 
 from .post_exp1 import (
+    study_val_page,
     ai_usage_page,
-    tool_preference_page,
-    post_self_efficacy_page,
     thank_you_page
 )
 
@@ -41,8 +37,6 @@ __all__ = [
     'consent_page',
     'participant_id_page',
     'developer_experience_page',
-    'self_efficacy_page',
-    'work_satisfaction_page',
     'ai_tools_page',
     'repository_assignment_page',
     'code_experience_page',
@@ -55,13 +49,11 @@ __all__ = [
     
     # Post-PR pages
     'ai_condition_questions_page',
-    'code_quality_page',
     'post_issue_questions_page',
     'completion_page',
     'thank_you_page',
 
     # Post-Exp1 pages
+    'study_val_page',
     'ai_usage_page',
-    'tool_preference_page',
-    'post_self_efficacy_page'
 ]

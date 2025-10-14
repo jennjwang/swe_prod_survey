@@ -9,47 +9,15 @@ from survey_utils import save_and_navigate, record_audio
 from survey_data import save_post_exp1_responses
 
 
-# AI Perception questions (1-7 scale, agreement)
-AI_PERCEPTION_QUESTIONS = {
-    'codebase_comprehension': "Using AI helps me locate and understand relevant parts of the codebase faster than I could on my own.",
-    'code_correctness': "When using AI, I feel more confident in writing code that works correctly.",
-    'solution_exploration': "Using AI helps me discover alternative ways to implement a solution.",
-    'problem_solving': "When using AI, I feel more capable of solving programming problems that I would otherwise find challenging.",
-    'productivity': "Using AI helps me complete programming tasks more quickly than without them."
-}
-
-AI_PERCEPTION_OPTIONS = ["Not selected", "1 - Strongly disagree", "2", "3", "4", "5", "6", "7 - Strongly agree"]
-
-
 def ai_usage_page():
     """Display AI usage questions with perception ratings and interview questions."""
     page_header(
-        "Effectiveness of AI Tools",
-        "Please reflect on your experience using AI tools during this experiment. For each of the following statements, rate how much you agree or disagree."
+        "AI Usage Patterns",
+        "Please reflect on your overall experience using AI tools during this experiment."
     )
 
     # Load previous responses
     previous_responses = st.session_state['survey_responses'].get('ai_usage', {})
-
-    # # AI Perception Section
-    # st.markdown("""
-    #     <p style='font-size:18px; font-weight:600; margin-bottom: 1rem;'>
-    #     For each of the following statements, rate how much you agree or disagree:
-    #     </p>
-    #     <p style='font-size:16px; margin-bottom: 1.5rem; color: #666;'>
-    #     </p>
-    #     """, unsafe_allow_html=True)
-
-    ai_perception_responses = {}
-    for key, statement in AI_PERCEPTION_QUESTIONS.items():
-        ai_perception_responses[key] = slider_question(
-            statement,
-            AI_PERCEPTION_OPTIONS,
-            f"ai_perception_{key}",
-            previous_responses.get(key, "Not selected")
-        )
-
-    st.divider()
 
     # Interview Questions Section with Audio
     st.markdown("""
@@ -96,7 +64,49 @@ def ai_usage_page():
 
     st.markdown("""
         <p style='font-size:18px; font-weight:400; margin-bottom: 1.5rem;'>
-        What do you wish these tools did differently?
+        How do you decide when to accept, modify, or reject an AI-generated suggestion?
+        </p>
+        """, unsafe_allow_html=True)
+
+    # Create tabs for audio and text input
+    tab5, tab6 = st.tabs(["🎤 Record Audio", "⌨️ Type Response"])
+
+    with tab5:
+        st.markdown("""
+            <p style='font-size:14px; margin-bottom: 0.5rem; color: #666;'>
+            Click the microphone button below to record your response. Your audio will be transcribed automatically.
+            </p>
+            """, unsafe_allow_html=True)
+        transcript_suggestions = record_audio("ai_suggestion_decisions", min_duration=10, max_duration=300)
+
+    with tab6:
+        st.markdown("""
+            <p style='font-size:14px; margin-bottom: 0.5rem; color: #666;'>
+            Type your response in the text box below.
+            </p>
+            """, unsafe_allow_html=True)
+        text_response_suggestions = st.text_area(
+            "Your response:",
+            key="ai_suggestion_decisions_text",
+            value=previous_responses.get('ai_suggestion_decisions', ''),
+            height=150,
+            placeholder="Type your answer here...",
+            label_visibility="collapsed"
+        )
+
+    # Use whichever response is available
+    if transcript_suggestions:
+        ai_suggestion_decisions_response = transcript_suggestions
+    elif text_response_suggestions and text_response_suggestions.strip():
+        ai_suggestion_decisions_response = text_response_suggestions
+    else:
+        ai_suggestion_decisions_response = previous_responses.get('ai_suggestion_decisions', '')
+
+    st.divider()
+
+    st.markdown("""
+        <p style='font-size:18px; font-weight:400; margin-bottom: 1.5rem;'>
+        How would you describe an "ideal" interaction with your coding tools? What do you wish these tools did differently?
         </p>
         """, unsafe_allow_html=True)
 
@@ -137,9 +147,10 @@ def ai_usage_page():
     # Combine all responses
     interview_responses = {
         'ai_helpful_tasks': ai_helpful_tasks_response,
-        'ai_wish_different': ai_wish_different_response
+        'ai_wish_different': ai_wish_different_response,
+        'ai_suggestion_decisions': ai_suggestion_decisions_response
     }
-    all_responses = {**ai_perception_responses, **interview_responses}
+    all_responses = {**interview_responses}
 
     # Validation function
     def validate():
@@ -148,10 +159,8 @@ def ai_usage_page():
             return False
         if not ai_wish_different_response or not ai_wish_different_response.strip():
             return False
-        # Check that all perception responses are selected
-        for key, v in ai_perception_responses.items():
-            if v == "Not selected":
-                return False
+        if not ai_suggestion_decisions_response or not ai_suggestion_decisions_response.strip():
+            return False
         return True
 
     # # Custom navigation handlers
@@ -168,34 +177,16 @@ def ai_usage_page():
         # Save to session state
         st.session_state['survey_responses']['ai_usage'] = all_responses
 
-        # Prepare data for database - extract numeric values from perception responses
-        db_responses = {}
-        for key, value in all_responses.items():
-            if key in AI_PERCEPTION_QUESTIONS.keys():
-                # Extract numeric part from strings like "1 - Strongly disagree" or "2"
-                if isinstance(value, str) and value != "Not selected":
-                    # Split on " - " or just take first character if it's a digit
-                    numeric_value = value.split(' - ')[0].strip()
-                    try:
-                        db_responses[key] = int(numeric_value)
-                    except ValueError:
-                        db_responses[key] = None
-                else:
-                    db_responses[key] = value
-            else:
-                # Keep text responses as-is
-                db_responses[key] = value
-
         # Save to database
         participant_id = st.session_state['survey_responses'].get('participant_id', '')
         if participant_id:
-            result = save_post_exp1_responses(participant_id, db_responses)
+            result = save_post_exp1_responses(participant_id, all_responses)
             if not result['success']:
                 st.error(f"Error saving responses: {result['error']}")
                 return
 
-        # Navigate to next page
-        st.session_state['page'] += 1
+        # Navigate to thank you page
+        st.session_state['page'] = 15  # Thank you page (page 15)
         st.rerun()
 
     # Navigation

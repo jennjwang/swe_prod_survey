@@ -35,7 +35,7 @@ def issue_assignment_page():
     if already_assigned:
         # Issue already accepted and assigned in database
         issue_url = st.session_state['survey_responses'].get('issue_url')
-        st.success("✅ You have accepted your issue assignment!")
+        st.success("You have accepted your issue assignment!")
         st.markdown(f"""
             <p style='font-size:18px; margin-top: 1rem;'>
             <strong>Assigned Issue:</strong> <a href="{issue_url}" target="_blank">{issue_url}</a>
@@ -89,8 +89,9 @@ def issue_assignment_page():
     
     if next_clicked:
         if already_assigned:
-            # Already assigned, just proceed
-            save_and_navigate('next')
+            # Already assigned, go to time estimation
+            st.session_state['page'] = 8  # time_estimation_page
+            st.rerun()
         else:
             # Accept and assign the issue in database
             if 'preview_issue' in st.session_state:
@@ -114,12 +115,14 @@ def issue_assignment_page():
                     # Reset post-exp1 completion flag for new issue
                     st.session_state['post_exp1_completed'] = False
 
-                    # Save to session state and proceed to next page immediately
-                    # (no intermediate success message to avoid glitching)
-                    save_and_navigate('next',
-                                    assigned_issue=preview_issue,
-                                    issue_url=preview_issue['url'],
-                                    issue_id=preview_issue['id'])
+                    # Save to session state
+                    st.session_state['survey_responses']['assigned_issue'] = preview_issue
+                    st.session_state['survey_responses']['issue_url'] = preview_issue['url']
+                    st.session_state['survey_responses']['issue_id'] = preview_issue['id']
+                    
+                    # Navigate to time estimation page
+                    st.session_state['page'] = 8  # time_estimation_page
+                    st.rerun()
                 else:
                     st.error(f"⚠️ Error assigning issue: {assign_result['error']}")
                     print("Check the console/terminal for detailed error logs")

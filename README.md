@@ -40,7 +40,6 @@ survey/
 **Pages Included:**
 
 - `consent_page()` - Initial consent screen
-- `work_satisfaction_page()` - Work satisfaction questions
 - `ai_tools_page()` - AI tool usage questions
 - `self_efficacy_page()` - Self-efficacy assessment
 - `task_estimation_page()` - Task time estimation
@@ -61,7 +60,6 @@ survey/
 
 **Contains:**
 
-- `SATISFACTION_QUESTIONS` - Work satisfaction questions
 - `AI_FREQUENCY_QUESTIONS` - AI tool usage questions
 - `SELF_EFFICACY_QUESTIONS` - Self-efficacy statements
 - `TASK_ESTIMATION_QUESTIONS` - Time estimation questions

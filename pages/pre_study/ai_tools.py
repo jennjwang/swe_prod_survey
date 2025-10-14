@@ -17,7 +17,6 @@ def ai_tools_page():
     
     # Load previous responses
     previous_experience = st.session_state['survey_responses'].get('ai_experience', {})
-    previous_ai_help = st.session_state['survey_responses'].get('ai_help_examples', '')
     
     # Display all questions with dividers
     responses = {}
@@ -32,24 +31,14 @@ def ai_tools_page():
         # Add divider between questions
         st.divider()
     
-    # AI tools help/hinder question
-    ai_help_examples = text_area_question(
-        "If you used AI tools, how did they help or hinder your work on this issue? Please provide specific examples.",
-        "ai_help_examples",
-        previous_ai_help,
-        height=120,
-        placeholder="Describe specific examples of how AI tools helped or hindered your work..."
-    )
-    
     # Validation function
     def validate():
-        return (all(v != "Not selected" for v in responses.values()) and 
-                ai_help_examples.strip())
+        return all(v != "Not selected" for v in responses.values())
     
     # Navigation
     navigation_buttons(
-        on_back=lambda: save_and_navigate('back', ai_experience=responses, ai_help_examples=ai_help_examples),
-        on_next=lambda: save_and_navigate('next', ai_experience=responses, ai_help_examples=ai_help_examples),
+        on_back=lambda: save_and_navigate('back', ai_experience=responses),
+        on_next=lambda: save_and_navigate('next', ai_experience=responses),
         back_key="ai_tools_back",
         next_key="ai_tools_next",
         validation_fn=validate,

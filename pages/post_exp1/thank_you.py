@@ -17,25 +17,25 @@ def thank_you_page():
 
     st.success("All survey responses have been recorded successfully!")
 
-    # Display participant details
-    participant_id = st.session_state['survey_responses'].get('participant_id', '')
-    assigned_repo = st.session_state['survey_responses'].get('assigned_repository', '')
+    # # Display participant details
+    # participant_id = st.session_state['survey_responses'].get('participant_id', '')
+    # assigned_repo = st.session_state['survey_responses'].get('assigned_repository', '')
 
-    # Show summary information
-    st.markdown("---")
-    st.markdown("""
-        <p style='font-size:18px; font-weight: 600; margin-bottom: 1rem'>
-        Study Summary:
-        </p>
-        """, unsafe_allow_html=True)
+    # # Show summary information
+    # st.markdown("---")
+    # st.markdown("""
+    #     <p style='font-size:18px; font-weight: 600; margin-bottom: 1rem'>
+    #     Study Summary:
+    #     </p>
+    #     """, unsafe_allow_html=True)
 
-    if participant_id:
-        st.info(f"**Participant ID:** {participant_id}")
+    # if participant_id:
+    #     st.info(f"**Participant ID:** {participant_id}")
 
-    if assigned_repo:
-        st.info(f"**Repository:** {assigned_repo}")
+    # if assigned_repo:
+    #     st.info(f"**Repository:** {assigned_repo}")
 
-    st.markdown("---")
+    # st.markdown("---")
 
     # Closing message
     st.markdown("""

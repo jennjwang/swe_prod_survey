@@ -23,8 +23,6 @@ def repository_assignment_page():
     if participant_id:
         st.info(f"**Participant ID:** {participant_id}")
     
-    st.divider()
-    
     # Show assigned repository from database
     assigned_repo = None
     repo_url = None

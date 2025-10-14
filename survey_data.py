@@ -185,54 +185,10 @@ def save_survey_responses(participant_id: str, responses: dict):
             'repository_url': responses.get('repository_url'),
             'forked_repository_url': responses.get('forked_repository_url'),
             'code_experience': responses.get('code_experience'),
-            'ai_help_examples': responses.get('ai_help_examples'),
         }
         
-        # Add code quality responses if they exist
-        code_quality = responses.get('code_quality', {})
-        if code_quality:
-            data.update({
-                'code_quality_readability': code_quality.get('readability'),
-                'code_quality_analyzability': code_quality.get('analyzability'),
-                'code_quality_modifiability': code_quality.get('modifiability'),
-                'code_quality_testability': code_quality.get('testability'),
-                'code_quality_stability': code_quality.get('stability'),
-                'code_quality_correctness': code_quality.get('correctness'),
-                'code_quality_compliance': code_quality.get('compliance'),
-            })
         
-        # Flatten self_efficacy dict and extract numeric values
-        self_efficacy = responses.get('self_efficacy', {})
-        for key in ['comprehension', 'design', 'implementation', 'debugging', 'testing', 'cooperation']:
-            value = self_efficacy.get(key)
-            if value and isinstance(value, str) and value != "Not selected":
-                # Extract numeric part from strings like "1: I am not confident at all"
-                numeric_value = value.split(':')[0].strip()
-                try:
-                    data[f'self_efficacy_{key}'] = int(numeric_value)
-                except ValueError:
-                    data[f'self_efficacy_{key}'] = None
-            else:
-                data[f'self_efficacy_{key}'] = value
 
-        # Flatten satisfaction dict and extract numeric values
-        satisfaction = responses.get('satisfaction', {})
-        for key in ['abilities_use', 'community_recognition', 'work_alone', 'freedom_judgment', 'own_methods', 'accomplishment', 'learning', 'praise']:
-            value = satisfaction.get(key)
-            if value and isinstance(value, str) and value != "Not selected":
-                # Extract numeric part from rating strings (handles both "1:" and "1 -" formats)
-                if ':' in value:
-                    numeric_value = value.split(':')[0].strip()
-                elif ' - ' in value:
-                    numeric_value = value.split(' - ')[0].strip()
-                else:
-                    numeric_value = value.strip()
-                try:
-                    data[f'satisfaction_{key}'] = int(numeric_value)
-                except ValueError:
-                    data[f'satisfaction_{key}'] = value
-            else:
-                data[f'satisfaction_{key}'] = value
         
         # Flatten ai_experience dict
         ai_experience = responses.get('ai_experience', {})

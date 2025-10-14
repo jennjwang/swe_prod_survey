@@ -5,15 +5,13 @@ Shows for all participants after completing an issue.
 
 import streamlit as st
 from survey_components import page_header, slider_question, navigation_buttons
-from survey_utils import save_and_navigate, record_audio
+from survey_utils import save_and_navigate
 from survey_data import save_post_issue_responses, save_pr_survey_completion_status
 
 
 # NASA-TLX questions with 7-point scale
 NASA_TLX_QUESTIONS = {
     'mental_demand': "How mentally demanding was the task?",
-    'pace': "How hurried or rushed was the pace of the task?",
-    'success': "How successful were you in accomplishing what you were asked to do?",
     'effort': "How hard did you have to work to accomplish your level of performance?",
     'frustration': "How frustrated, annoyed, or stressed did you feel while implementing this PR?"
 }
@@ -21,11 +19,6 @@ NASA_TLX_QUESTIONS = {
 NASA_TLX_OPTIONS = ["Not selected", "1 - Very low", "2", "3", "4", "5", "6", "7 - Very high"]
 
 
-# Interview questions
-INTERVIEW_QUESTIONS = [
-    "What went well, and what was challenging?",
-    # "How did you approach solving this issue? Walk us through your problem-solving process."
-]
 
 
 def post_issue_questions_page():
@@ -42,7 +35,7 @@ def post_issue_questions_page():
         
         if completion_result['success'] and completion_result['completed']:
             # Already completed, redirect to already completed page
-            st.session_state['page'] = 18  # Already completed page (completion_page)
+            st.session_state['page'] = 14  # Already completed page (completion_page)
             st.rerun()
             return
     
@@ -64,66 +57,14 @@ def post_issue_questions_page():
             previous_responses.get(key, "Not selected")
         )
     
-    st.divider()
-
-    # Interview Questions Section
-    interview_responses = {}
-    for i, question in enumerate(INTERVIEW_QUESTIONS, start=1):
-        st.markdown(f"""
-            <p style='font-size:18px; font-weight:400; margin-bottom: 1.5rem;'>
-            {question}
-            </p>
-            """, unsafe_allow_html=True)
-
-        # Create tabs for audio and text input
-        tab_audio, tab_text = st.tabs(["🎤 Record Audio", "⌨️ Type Response"])
-
-        with tab_audio:
-            st.markdown("""
-                <p style='font-size:14px; margin-bottom: 0.5rem; color: #666;'>
-                Click the microphone button below to record your response. Your audio will be transcribed automatically.
-                </p>
-                """, unsafe_allow_html=True)
-            transcript = record_audio(f"interview_{i}", min_duration=10, max_duration=300)
-
-        with tab_text:
-            st.markdown("""
-                <p style='font-size:14px; margin-bottom: 0.5rem; color: #666;'>
-                Type your response in the text box below.
-                </p>
-                """, unsafe_allow_html=True)
-            text_response = st.text_area(
-                "Your response:",
-                key=f"interview_text_{i}",
-                value=previous_responses.get(f"interview_{i}", ""),
-                height=150,
-                placeholder="Type your answer here..."
-            )
-
-        # Use whichever response is available
-        if transcript:
-            interview_responses[f"interview_{i}"] = transcript
-        elif text_response and text_response.strip():
-            interview_responses[f"interview_{i}"] = text_response
-        else:
-            interview_responses[f"interview_{i}"] = previous_responses.get(f"interview_{i}", "")
-
-        if i < len(INTERVIEW_QUESTIONS):
-            st.divider()
-
-    # Combine all responses
-    all_responses = {**nasa_tlx_responses, **interview_responses}
+    # Use NASA-TLX responses as all responses
+    all_responses = nasa_tlx_responses
     
     # Validation function
     def validate():
         # Check NASA-TLX responses
         for v in nasa_tlx_responses.values():
             if v == "Not selected":
-                return False
-        # Check interview responses - must have text
-        for i in range(1, len(INTERVIEW_QUESTIONS) + 1):
-            response = interview_responses.get(f"interview_{i}", "")
-            if not response or not response.strip():
                 return False
         return True
     
@@ -141,15 +82,10 @@ def post_issue_questions_page():
         nasa_keys = ['mental_demand', 'pace', 'success', 'effort', 'frustration']
         for i, key in enumerate(nasa_keys, start=1):
             value = nasa_tlx_responses.get(key)
-            if value != "Not selected":
+            if value and value != "Not selected":
                 db_responses[f'nasa_tlx_{i}'] = int(value.split()[0])
         
 
-        # Add interview responses (text)
-        for i in range(1, len(INTERVIEW_QUESTIONS) + 1):
-            interview_key = f'interview_{i}'
-            if interview_key in interview_responses:
-                db_responses[interview_key] = interview_responses[interview_key]
 
         # Save responses to database
         result = save_post_issue_responses(participant_id, int(issue_id), db_responses)
@@ -193,7 +129,7 @@ def post_issue_questions_page():
         # Save to database and session state
         if handle_next():
             # Navigate to completion page (checks if more issues, then redirects appropriately)
-            st.session_state['page'] = 18  # completion page
+            st.session_state['page'] = 14  # completion page
             st.rerun()
     
     # Navigation

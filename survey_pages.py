@@ -14,11 +14,7 @@ import streamlit as st
 import openai
 from supabase import create_client
 from survey_questions import (
-    SATISFACTION_QUESTIONS,
-    SATISFACTION_SLIDER_OPTIONS,
     EXPERIENCE_OPTIONS,
-    SELF_EFFICACY_QUESTIONS,
-    SELF_EFFICACY_OPTIONS,
     AI_EXPERIENCE_QUESTIONS,
     AI_HOURS_OPTIONS,
     TASK_ESTIMATION_QUESTIONS,
@@ -169,7 +165,7 @@ def consent_page():
         </p>
         
         <p style='font-size:20px'>
-        1. Work satisfaction and experience questions<br>
+        1. Developer experience questions<br>
         2. AI tool usage questions<br>
         3. Self-efficacy assessment<br>
         4. Task estimation questions
@@ -186,56 +182,6 @@ def consent_page():
     
     if st.button("I am at least 18 years old and I agree to participate in this study."):
         next_page()
-
-
-def work_satisfaction_page():
-    """Display the work satisfaction questions page."""
-    st.header("Work Satisfaction")
-    st.markdown("""
-     <p style='font-size:18px; font-weight: 600; margin-bottom: 2rem'>
-        Rate how satisfied you are with the following aspects of your work as a developer.
-        </p>
-        """, unsafe_allow_html=True)
-    
-    # Load previous responses if they exist
-    previous_responses = st.session_state['survey_responses'].get('satisfaction', {})
-    
-    responses = {}
-    for idx, (key, question) in enumerate(SATISFACTION_QUESTIONS.items()):
-        is_first = idx == 0
-        
-        # Use very bold font weight for first question label, normal for others
-        font_weight = '400'
-        st.markdown(f"<p style='font-size:18px; margin-bottom:0rem; font-weight:{font_weight};'>{question}</p>", 
-                   unsafe_allow_html=True)
-        
-        # Get previous value or default to "Not selected"
-        default_value = previous_responses.get(key, "Not selected")
-        
-        responses[key] = st.select_slider(
-            label="",
-            options=SATISFACTION_SLIDER_OPTIONS,
-            value=default_value,
-            key=f"satisfaction_{key}"
-        )
-    
-    st.markdown("<div style='margin-top: 2rem;'></div>", unsafe_allow_html=True)
-    b1, b2, b3 = st.columns([1, 4, 1])
-    with b1:
-        back_clicked = st.button("Back", key="satisfaction_back")
-    with b3:
-        next_clicked = st.button("Next", key="satisfaction_next")
-    
-    if back_clicked:
-        # Save responses even when going back
-        st.session_state['survey_responses']['satisfaction'] = responses
-        previous_page()
-    elif next_clicked:
-        if all(v != "Not selected" for v in responses.values()):
-            st.session_state['survey_responses']['satisfaction'] = responses
-            next_page()
-        else:
-            st.error("Please fill out all fields before proceeding.")
 
 
 def developer_experience_page():
@@ -352,50 +298,6 @@ def ai_tools_page():
     elif ai_tools_next:
         if all(v != "Not selected" for v in responses.values()):
             st.session_state['survey_responses']['ai_experience'] = responses
-            next_page()
-        else:
-            st.error("Please fill out all fields before proceeding.")
-
-
-def self_efficacy_page():
-    """Display the self-efficacy assessment page."""
-    st.header("Self-Efficacy Assessment")
-    
-    st.markdown("""
-        <p style='font-size:18px; font-weight: 600; margin-bottom: 2rem'>
-        Please rate how confident you are that you can perform each of the following tasks effectively.
-        </p>
-        """, unsafe_allow_html=True)
-    
-    # Load previous responses if they exist
-    previous_efficacy = st.session_state['survey_responses'].get('self_efficacy', {})
-    
-    responses = {}
-    for key, question in SELF_EFFICACY_QUESTIONS.items():
-        st.markdown(f"<p style='font-size:18px; margin-bottom:0rem; font-weight:400;'>{question}</p>", 
-                   unsafe_allow_html=True)
-        default_value = previous_efficacy.get(key, "Not selected")
-        responses[key] = st.select_slider(
-            label="",
-            options=SELF_EFFICACY_OPTIONS,
-            value=default_value,
-            key=f"efficacy_{key}"
-        )
-    
-    st.markdown("<div style='margin-top: 1rem;'></div>", unsafe_allow_html=True)
-    e1, e2, e3 = st.columns([1, 4, 1])
-    with e1:
-        efficacy_back = st.button("Back", key="efficacy_back")
-    with e3:
-        efficacy_next = st.button("Next", key="efficacy_next")
-    
-    if efficacy_back:
-        # Save responses even when going back
-        st.session_state['survey_responses']['self_efficacy'] = responses
-        previous_page()
-    elif efficacy_next:
-        if all(v != "Not selected" for v in responses.values()):
-            st.session_state['survey_responses']['self_efficacy'] = responses
             next_page()
         else:
             st.error("Please fill out all fields before proceeding.")

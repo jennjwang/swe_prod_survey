@@ -47,7 +47,7 @@ def issue_completion_page():
     
     page_header(
         "Issue Status",
-        "Welcome back! Let's check on your assigned issue."
+        "Let's check on your assigned issue."
     )
     
     # Get issue details from session state
@@ -159,10 +159,10 @@ def issue_completion_page():
                         
                         if progress_result['success'] and progress_result['progress']['survey_completed']:
                             # Already completed survey, redirect to already completed page
-                            st.session_state['page'] = 14  # Already completed page
+                            st.session_state['page'] = 14  # Already completed page (page 14)
                         else:
-                            # Route to AI condition questions (if applicable) or post-issue questions
-                            st.session_state['page'] = 12  # AI condition questions page
+                            # Route directly to post-issue questions (General Experience)
+                            st.session_state['page'] = 11  # post_issue_questions_page (page 11)
                         st.rerun()
                     else:
                         st.error(f"⚠️ Error recording completion: {result['error']}")
