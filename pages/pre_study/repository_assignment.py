@@ -101,13 +101,13 @@ def repository_assignment_page():
     
     # Navigation
     navigation_buttons(
-        # on_back=lambda: save_and_navigate('back',
-        #                                   assigned_repository=assigned_repo,
-        #                                   forked_repository_url=forked_repo_url),
+        on_back=lambda: save_and_navigate('back',
+                                          assigned_repository=assigned_repo,
+                                          forked_repository_url=forked_repo_url),
         on_next=lambda: save_and_navigate('next',
                                           assigned_repository=assigned_repo,
                                           forked_repository_url=forked_repo_url),
-        # back_key="task_back",
+        back_key="task_back",
         next_key="task_next",
         validation_fn=validate,
         validation_error=get_error_message()
