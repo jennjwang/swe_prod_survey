@@ -5,7 +5,7 @@ Shows for all participants after completing an issue.
 
 import streamlit as st
 from survey_components import page_header, slider_question, navigation_buttons
-from survey_utils import save_and_navigate
+from survey_utils import record_audio
 from survey_data import save_post_issue_responses, save_pr_survey_completion_status
 
 
@@ -56,9 +56,52 @@ def post_issue_questions_page():
             f"nasa_tlx_{key}",
             previous_responses.get(key, "Not selected")
         )
-    
-    # Use NASA-TLX responses as all responses
-    all_responses = nasa_tlx_responses
+
+    st.divider()
+
+    # Open-ended question about time/effort (audio or text)
+    st.markdown("""
+        <p style='font-size:18px; font-weight:400; margin-bottom: 1.5rem;'>
+        Where did you spend the most time or effort while implementing this PR?
+        </p>
+        """, unsafe_allow_html=True)
+
+    # Create tabs for audio and text input
+    tab1, tab2 = st.tabs(["🎤 Record Audio", "⌨️ Type Response"])
+
+    with tab1:
+        st.markdown("""
+            <p style='font-size:14px; margin-bottom: 0.5rem; color: #666;'>
+            Click the microphone button below to record your response. Your audio will be transcribed automatically.
+            </p>
+            """, unsafe_allow_html=True)
+        transcript = record_audio("time_effort_description", min_duration=10, max_duration=300)
+
+    with tab2:
+        st.markdown("""
+            <p style='font-size:14px; margin-bottom: 0.5rem; color: #666;'>
+            Type your response in the text box below.
+            </p>
+            """, unsafe_allow_html=True)
+        text_response = st.text_area(
+            "Your response:",
+            key="time_effort_description_text",
+            value=previous_responses.get('time_effort_description', ''),
+            height=150,
+            placeholder="Please describe where you spent the most time or effort while implementing this PR...",
+            label_visibility="collapsed"
+        )
+
+    # Use whichever response is available
+    if transcript:
+        time_effort_description = transcript
+    elif text_response and text_response.strip():
+        time_effort_description = text_response
+    else:
+        time_effort_description = previous_responses.get('time_effort_description', '')
+
+    # Combine all responses
+    all_responses = {**nasa_tlx_responses, 'time_effort_description': time_effort_description}
     
     # Validation function
     def validate():
@@ -66,6 +109,9 @@ def post_issue_questions_page():
         for v in nasa_tlx_responses.values():
             if v == "Not selected":
                 return False
+        # Check open-ended question
+        if not time_effort_description or not time_effort_description.strip():
+            return False
         return True
     
     # Custom save function for database
@@ -84,7 +130,9 @@ def post_issue_questions_page():
             value = nasa_tlx_responses.get(key)
             if value and value != "Not selected":
                 db_responses[f'nasa_tlx_{i}'] = int(value.split()[0])
-        
+
+        # Add open-ended question
+        db_responses['time_effort_description'] = time_effort_description
 
 
         # Save responses to database

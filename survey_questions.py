@@ -14,7 +14,8 @@ EXPERIENCE_OPTIONS = (
 
 # AI tool usage questions
 AI_EXPERIENCE_QUESTIONS = {
-    'llm_hours': 'Approximately how many hours had you spent using <strong>AI assistants</strong> such as ChatGPT, Claude, or Copilot?',
+    'llm_hours': 'Approximately how many hours have you spent using <strong>AI assistants</strong> such as ChatGPT, Claude, or Gemini?',
+    'agent_hours': 'Approximately how many hours have you spent using <strong>AI coding agents</strong> such as GitHub Copilot, Cursor, or Claude Code?',
 }
 
 AI_HOURS_OPTIONS = [

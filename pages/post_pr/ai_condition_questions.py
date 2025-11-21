@@ -15,17 +15,17 @@ def ai_condition_questions_page():
     participant_id = st.session_state['survey_responses'].get('participant_id', '')
     issue_id = st.session_state['survey_responses'].get('issue_id', '')
 
-    # Check if participant is in AI condition
-    if participant_id:
-        ai_check = check_participant_ai_condition(participant_id)
-        print(f"DEBUG: AI condition check for participant {participant_id}: {ai_check}")
+    # Check if this issue uses AI
+    if participant_id and issue_id:
+        ai_check = check_participant_ai_condition(participant_id, issue_id)
+        print(f"DEBUG: AI condition check for issue {issue_id}: {ai_check}")
         if ai_check['success'] and not ai_check['using_ai']:
-            # Not using AI, skip to post-issue questions page
-            print(f"DEBUG: Participant {participant_id} not using AI, skipping to page 11")
+            # Not using AI for this issue, skip to post-issue questions page
+            print(f"DEBUG: Issue {issue_id} not using AI, skipping to page 11")
             st.session_state['page'] = 11  # post_issue_questions_page
             st.rerun()
             return
-        print(f"DEBUG: Showing AI condition questions for participant {participant_id}")
+        print(f"DEBUG: Showing AI condition questions for issue {issue_id}")
 
     page_header(
         "AI Tool Experience",

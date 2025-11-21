@@ -43,13 +43,10 @@ def repository_assignment_page():
                 st.success(f"You have been assigned repository: **{assigned_repo}**")
             else:
                 if "not found" in result['error']:
-                    st.error(f"⚠️ {result['error']}")
-                    st.info("Note: Participant IDs are case-sensitive. Please ensure you entered it exactly as provided.")
-                else:
-                    st.error(result['error'])
+                    st.error(f"{result['error']}")
                 assigned_repo = None
         else:
-            st.error("⚠️ Participant ID not found. Please go back and enter your Participant ID on the first page.")
+            st.error("Participant ID not found. Please go back and enter your email on the first page.")
     
     # Show fork instructions if repository is assigned
     forked_repo_url = None
@@ -68,13 +65,10 @@ def repository_assignment_page():
             1. Go to <a href="{repo_url}" target="_blank" style="color: #0066cc;">{repo_url}</a>
             </p>
             <p style='font-size:18px; margin-bottom: 0.5rem'>
-            2. Click the <strong>"Fork"</strong> button in the top-right corner
-            </p>
-            <p style='font-size:18px; margin-bottom: 0.5rem'>
-            3. Create the fork in your anonymous GitHub account
+            2. Create the fork in your anonymous GitHub account
             </p>
             <p style='font-size:18px; margin-bottom: 1rem'>
-            4. Copy and paste the URL of your forked repository below
+            3. Copy and paste the URL of your forked repository below
             </p>
             """, unsafe_allow_html=True)
         

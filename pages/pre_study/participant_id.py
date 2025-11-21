@@ -12,21 +12,19 @@ def participant_id_page():
     """Display the participant ID input page."""
     page_header(
         "The Ripple Effects of AI in Software Development",
-        "Please enter your Participant ID to begin the survey."
+        "Please enter your email to begin the survey."
     )
-    
+
     # Load previous participant ID if it exists
     previous_participant_id = st.session_state['survey_responses'].get('participant_id', '')
-    
+
     # Participant ID input
     participant_id = text_input_question(
-        "Participant ID:",
+        "Email:",
         "participant_id_input",
         previous_participant_id,
-        placeholder="Enter your participant ID"
+        placeholder="Enter your email"
     )
-    
-    st.info("**Note:** Your Participant ID is case-sensitive. Please enter it exactly as provided.")
     
     # Navigation - hide back button since this is the first page
     st.markdown("<div style='margin-top: 2rem;'></div>", unsafe_allow_html=True)
@@ -35,10 +33,10 @@ def participant_id_page():
     if next_clicked:
         # Basic validation first
         if not participant_id or not participant_id.strip():
-            st.error("Please enter your Participant ID to proceed.")
+            st.error("Please enter your email to proceed.")
         else:
             # Validate against database
-            with st.spinner('Validating Participant ID...'):
+            with st.spinner('Validating email...'):
                 validation_result = validate_participant_id(participant_id)
             
             if validation_result['valid']:
@@ -57,13 +55,13 @@ def participant_id_page():
                         pre_data = progress['pre_study_data']
                         st.session_state['survey_responses'].update({
                             'professional_experience': pre_data.get('professional_experience'),
-                            'occupation_description': pre_data.get('occupation_description'),
                             'assigned_repository': pre_data.get('assigned_repository'),
                             'repository_url': pre_data.get('repository_url'),
                             'forked_repository_url': pre_data.get('forked_repository_url'),
                             'code_experience': pre_data.get('code_experience'),
                             'ai_experience': {
                                 'llm_hours': pre_data.get('ai_experience_llm_hours'),
+                                'agent_hours': pre_data.get('ai_agent_experience_hours'),
                             }
                         })
                         st.session_state['pre_study_saved'] = True
@@ -85,9 +83,9 @@ def participant_id_page():
                     
                     # Route based on progress - CHECK PRE-STUDY FIRST
                     if not progress['pre_study_completed']:
-                        # Pre-study not completed, start from beginning
+                        # Pre-study not completed, start from beginning (skip developer experience)
                         print("DEBUG: Pre-study not completed, starting from beginning")
-                        st.session_state['page'] = 2  # Developer experience page (page 2)
+                        st.session_state['page'] = 3  # AI tools page (page 3) - skip developer experience
                         st.rerun()
                     elif progress['issue_assigned']:
                         # Pre-study completed and issue assigned
@@ -123,10 +121,10 @@ def participant_id_page():
                         st.session_state['page'] = 7  # Issue assignment page
                         st.rerun()
                 else:
-                    # Couldn't check progress, just proceed normally
-                    st.session_state['page'] = 2  # Developer experience page (page 2)
+                    # Couldn't check progress, just proceed normally (skip developer experience)
+                    st.session_state['page'] = 3  # AI tools page (page 3) - skip developer experience
                     st.rerun()
             else:
                 # ID is not valid, show error
-                st.error(f"⚠️ {validation_result['error']}")
+                st.error(f"{validation_result['error']}")
 

@@ -10,12 +10,62 @@ from survey_data import get_random_unassigned_issue, assign_issue_to_participant
 
 def issue_assignment_page():
     """Display the issue assignment page."""
-    
+
+    # Check if we need to show AI condition acknowledgment
+    if st.session_state.get('show_ai_condition', False):
+        using_ai = st.session_state.get('ai_condition_value', False)
+
+        page_header(
+            "AI Condition Assignment",
+            "Please read and acknowledge the following instructions for this issue."
+        )
+
+        if using_ai:
+            st.success("**You MAY use AI tools for this issue.**")
+            st.markdown("""
+                <p style='font-size:18px; margin-top: 1rem; margin-bottom: 1rem;'>
+                You are <strong>encouraged</strong> to use AI assistants to help you complete this task, including:
+                </p>
+                <ul style='font-size:16px; margin-left: 2rem;'>
+                    <li>ChatGPT, Claude, Gemini, or similar AI chatbots</li>
+                    <li>GitHub Copilot, Cursor, or similar AI code assistants</li>
+                    <li>Any other AI-powered development tools</li>
+                </ul>
+                """, unsafe_allow_html=True)
+        else:
+            st.warning("**You should NOT use AI tools for this issue.**")
+            st.markdown("""
+                <p style='font-size:18px; margin-top: 1rem; margin-bottom: 1rem;'>
+                Please complete this task <strong>without</strong> using AI assistants, including:
+                </p>
+                <ul style='font-size:16px; margin-left: 2rem;'>
+                    <li>ChatGPT, Claude, Gemini, or similar AI chatbots</li>
+                    <li>GitHub Copilot, Cursor, or similar AI coding agents</li>
+                    <li>Any other AI-powered development tools</li>
+                </ul>
+                """, unsafe_allow_html=True)
+
+        st.divider()
+
+        # Acknowledgment button
+        col1, col2 = st.columns([1, 1])
+        with col1:
+            acknowledge_text = "I understand and will use AI tools" if using_ai else "I understand and will NOT use AI tools"
+            if st.button(acknowledge_text, key="acknowledge_ai", type="primary", use_container_width=True):
+                # Clear the acknowledgment flag
+                st.session_state['show_ai_condition'] = False
+                st.session_state['ai_condition_value'] = None
+                # Navigate to time estimation page
+                st.session_state['page'] = 8  # time_estimation_page
+                st.rerun()
+
+        return
+
     page_header(
         "Issue Assignment",
         "You will be assigned an issue to work on from your repository."
     )
-    
+
     # Get participant info from session state
     participant_id = st.session_state['survey_responses'].get('participant_id', '')
     assigned_repo = st.session_state['survey_responses'].get('assigned_repository', '')
@@ -119,9 +169,14 @@ def issue_assignment_page():
                     st.session_state['survey_responses']['assigned_issue'] = preview_issue
                     st.session_state['survey_responses']['issue_url'] = preview_issue['url']
                     st.session_state['survey_responses']['issue_id'] = preview_issue['id']
-                    
-                    # Navigate to time estimation page
-                    st.session_state['page'] = 8  # time_estimation_page
+
+                    # Display AI condition to the participant and require acknowledgment
+                    using_ai = assign_result.get('using_ai', False)
+                    st.session_state['survey_responses']['current_issue_using_ai'] = using_ai
+
+                    # Set flag to show AI condition acknowledgment
+                    st.session_state['show_ai_condition'] = True
+                    st.session_state['ai_condition_value'] = using_ai
                     st.rerun()
                 else:
                     st.error(f"⚠️ Error assigning issue: {assign_result['error']}")

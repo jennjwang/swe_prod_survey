@@ -346,17 +346,46 @@ def task_estimation_page():
                     row = response.data[0]
                     print(f"Row data: {row}")
                     
-                    # Extract repository details from new schema
-                    owner = row.get('repository_owner')
+                    # Extract repository details from schema (owner may be derived from URL)
                     repository_name = row.get('repository_name')
-                    repository_url = row.get('repository_url')
-                    
-                    print(f"Owner: {owner}")
+                    repository_url = row.get('repository_url') or row.get('repo_url')
+                    owner = None
+
+                    # Try to parse owner/repo from repository_url if present
+                    if repository_url:
+                        try:
+                            from urllib.parse import urlparse
+                            path = urlparse(repository_url).path.strip('/')
+                            parts = [p for p in path.split('/') if p]
+                            if len(parts) >= 2:
+                                owner_parsed = parts[0]
+                                repo_parsed = parts[1][:-4] if parts[1].endswith('.git') else parts[1]
+                                owner = owner_parsed
+                                if not repository_name:
+                                    repository_name = repo_parsed
+                        except Exception:
+                            pass
+
+                    # If still missing, try repository_id if it contains owner/repo
+                    if (not owner or not repository_name) and isinstance(row.get('repository_id'), str):
+                        repo_id_val = row.get('repository_id')
+                        if '/' in repo_id_val:
+                            try:
+                                owner_candidate, repo_candidate = repo_id_val.split('/', 1)
+                                if not owner:
+                                    owner = owner_candidate
+                                if not repository_name:
+                                    repository_name = repo_candidate
+                            except Exception:
+                                pass
+
+                    print(f"Owner (derived): {owner}")
                     print(f"Repository name: {repository_name}")
                     print(f"Repository URL: {repository_url}")
-                    
-                    if owner and repository_name:
-                        assigned_repo = f"{owner}/{repository_name}"
+
+                    if repository_name:
+                        # Store only the repository name (not owner/repo)
+                        assigned_repo = repository_name
                         st.session_state['survey_responses']['assigned_repository'] = assigned_repo
                         st.session_state['survey_responses']['repository_url'] = repository_url
                         st.success(f"You have been assigned repository: **{assigned_repo}**")
@@ -367,8 +396,7 @@ def task_estimation_page():
                     # Try to get all records to debug
                     all_records = supabase_client.table('participant-repos').select('participant_id').limit(5).execute()
                     print(f"Sample participant IDs in table: {[r.get('participant_id') for r in all_records.data if all_records.data]}")
-                    st.error(f"⚠️ Participant ID '{participant_id}' not found in the system. Please check your ID and try again.")
-                    st.info("Note: Participant IDs are case-sensitive. Please ensure you entered it exactly as provided.")
+                    st.error(f"Email '{participant_id}' not found in the system. Please check your email and try again.")
                     assigned_repo = None
             except Exception as e:
                 st.error(f"Error retrieving repository assignment: {str(e)}")
@@ -552,4 +580,3 @@ def completion_page():
     
     with st.expander("View all your responses"):
         st.json(st.session_state['survey_responses'])
-

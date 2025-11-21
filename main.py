@@ -10,7 +10,6 @@ from pages import (
     # Pre-study pages
     consent_page,
     participant_id_page,
-    developer_experience_page,
     ai_tools_page,
     repository_assignment_page,
     code_experience_page,
@@ -65,7 +64,7 @@ def main():
         # 0: consent_page,                    # Consent form
         0: participant_id_page,              # (Consent temporarily disabled) Start at Participant ID
         1: participant_id_page,              # Participant ID entry
-        2: developer_experience_page,        # Professional experience
+        # 2: developer_experience_page,      # Professional experience (REMOVED)
         3: ai_tools_page,                    # AI tools experience
         4: repository_assignment_page,       # Repository assignment
         5: code_experience_page,             # Code experience questions
