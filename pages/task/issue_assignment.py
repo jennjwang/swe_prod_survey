@@ -60,8 +60,8 @@ def issue_assignment_page():
                 # Clear the acknowledgment flag
                 st.session_state['show_ai_condition'] = False
                 st.session_state['ai_condition_value'] = None
-                # Navigate to time estimation page
-                st.session_state['page'] = 9  # time_estimation_page
+                # Navigate to issue completion page
+                st.session_state['page'] = 10  # issue_completion_page
                 st.rerun()
 
         return
@@ -151,13 +151,12 @@ def issue_assignment_page():
                         # Reset post-exp1 completion flag for new issue
                         st.session_state['post_exp1_completed'] = False
 
-                        # Get AI condition and show acknowledgment
+                        # Save AI condition (will be shown after time estimation)
                         using_ai = issue.get('using_ai', False)
                         st.session_state['survey_responses']['current_issue_using_ai'] = using_ai
 
-                        # Set flag to show AI condition acknowledgment
-                        st.session_state['show_ai_condition'] = True
-                        st.session_state['ai_condition_value'] = using_ai
+                        # Go directly to time estimation page
+                        st.session_state['page'] = 9  # time_estimation_page
                         st.rerun()
 
                 st.divider()

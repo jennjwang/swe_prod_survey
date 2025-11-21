@@ -27,9 +27,18 @@ def time_estimation_page():
     
     # Display assigned issue for context
     issue_url = st.session_state['survey_responses'].get('issue_url', '')
+    using_ai = st.session_state['survey_responses'].get('current_issue_using_ai', False)
+
     if issue_url:
         st.info(f"**Your Assigned Issue:** [{issue_url}]({issue_url})")
-        st.markdown("<div style='margin-bottom: 2rem;'></div>", unsafe_allow_html=True)
+
+    # # Display AI condition
+    # if using_ai:
+    #     st.warning("**AI Condition:** You MAY use AI tools for this issue.")
+    # else:
+    #     st.warning("**AI Condition:** You should NOT use AI tools for this issue.")
+
+    # st.markdown("<div style='margin-bottom: 2rem;'></div>", unsafe_allow_html=True)
     
     # Load previous response if exists
     previous_estimation = st.session_state['survey_responses'].get('time_estimation', None)
@@ -45,13 +54,14 @@ def time_estimation_page():
     if previous_estimation and previous_estimation in TIME_ESTIMATION_OPTIONS:
         default_index = TIME_ESTIMATION_OPTIONS.index(previous_estimation)
     else:
-        default_index = None
-    
+        default_index = 0
+
     time_estimation = st.selectbox(
-        label="",
+        label="Time estimation",
         options=TIME_ESTIMATION_OPTIONS,
         index=default_index,
-        key="time_estimation_select"
+        key="time_estimation_select",
+        label_visibility="collapsed"
     )
     
     # Navigation (no back button - can't change issue assignment)
@@ -71,9 +81,16 @@ def time_estimation_page():
                 else:
                     print(f"⚠️ Failed to save time estimate: {result['error']}")
                     # Don't block progression if database save fails
-            
-            # Then save to session state and navigate (this triggers page rerun)
-            save_and_navigate('next', time_estimation=time_estimation)
+
+            # Save to session state
+            st.session_state['survey_responses']['time_estimation'] = time_estimation
+
+            # Show AI condition acknowledgment page (on issue_assignment page)
+            using_ai = st.session_state['survey_responses'].get('current_issue_using_ai', False)
+            st.session_state['show_ai_condition'] = True
+            st.session_state['ai_condition_value'] = using_ai
+            st.session_state['page'] = 8  # Go to issue_assignment_page which will show the acknowledgment
+            st.rerun()
         else:
             st.error("Please select your time estimation to proceed.")
 
