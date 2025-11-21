@@ -74,12 +74,16 @@ def issue_assignment_page():
     # Get participant info from session state
     participant_id = st.session_state['survey_responses'].get('participant_id', '')
     assigned_repo = st.session_state['survey_responses'].get('assigned_repository', '')
+    repo_url = st.session_state['survey_responses'].get('repository_url', '')
 
     # Display context
     # if participant_id:
     #     st.info(f"**Participant ID:** {participant_id}")
     if assigned_repo:
-        st.info(f"**Assigned Repository:** {assigned_repo}")
+        if repo_url:
+            st.info(f"**Assigned Repository:** [{assigned_repo}]({repo_url})")
+        else:
+            st.info(f"**Assigned Repository:** {assigned_repo}")
 
     # st.divider()
 
@@ -96,18 +100,11 @@ def issue_assignment_page():
                 </p>
                 """, unsafe_allow_html=True)
 
-            col1, col2 = st.columns([1, 1])
+            col1, col2 = st.columns([1, 2])
             with col1:
                 if st.button("Get My Assignments", key="assign_all", type="primary", use_container_width=True):
                     with st.spinner('Assigning your issues...'):
                         assign_result = assign_all_issues_to_participant(participant_id, assigned_repo)
-
-                    if assign_result['success']:
-                        st.success("✅ All 4 issues assigned successfully!")
-                        st.rerun()
-                    else:
-                        st.error(f"⚠️ Error assigning issues: {assign_result['error']}")
-                        st.warning("Please contact the study administrator if this issue persists.")
 
         elif check_result['success'] and check_result['all_assigned']:
             # Get next issue in sequence
@@ -120,7 +117,7 @@ def issue_assignment_page():
                 total_completed = next_result['total_completed']
 
                 # Progress indicator
-                st.info(f"**Progress:** {total_completed} of 4 issues completed")
+                st.warning(f"**Progress:** {total_completed} of 4 issues completed")
 
                 # Show issue details
                 issue_url = issue.get('issue_url', '') or issue.get('url', '')
@@ -142,8 +139,8 @@ def issue_assignment_page():
                     st.warning(f"Issue ID: {issue_id} (URL not available)")
                     print(f"DEBUG: Issue data: {issue}")
 
-                # Navigation buttons
-                col1, col2 = st.columns([1, 1])
+                # Navigation button
+                col1, col2, col3 = st.columns([1, 2, 1])
                 with col1:
                     if st.button("Start This Issue", key="start_issue", type="primary", use_container_width=True):
                         # Save issue info to session state
@@ -163,55 +160,14 @@ def issue_assignment_page():
                         st.session_state['ai_condition_value'] = using_ai
                         st.rerun()
 
-                with col2:
-                    if st.button("Request Different Issue", key="request_swap", use_container_width=True):
-                        st.session_state['show_swap_request'] = True
-                        st.rerun()
+                st.divider()
 
-                # Show swap request form if button was clicked
-                if st.session_state.get('show_swap_request', False):
-                    st.divider()
-                    st.markdown("### Request a Different Issue")
-                    st.warning("⚠️ You can only request a different issue **once**. Please provide a justification below.")
-
-                    justification = st.text_area(
-                        "Justification for requesting a different issue:",
-                        placeholder="Please explain why you need a different issue...",
-                        key="swap_justification",
-                        height=100
-                    )
-
-                    col_cancel, col_submit = st.columns([1, 1])
-                    with col_cancel:
-                        if st.button("Cancel", key="cancel_swap"):
-                            st.session_state['show_swap_request'] = False
-                            st.rerun()
-
-                    with col_submit:
-                        if st.button("Submit Request", key="submit_swap", type="primary"):
-                            if not justification or not justification.strip():
-                                st.error("⚠️ Please provide a justification for requesting a different issue.")
-                            else:
-                                with st.spinner("Processing your request..."):
-                                    swap_result = request_different_issue(
-                                        participant_id,
-                                        issue['issue_id'],
-                                        justification.strip()
-                                    )
-
-                                if swap_result['success']:
-                                    st.success("✅ Your issue has been swapped successfully!")
-                                    st.session_state['show_swap_request'] = False
-                                    st.rerun()
-                                elif swap_result['already_used']:
-                                    st.error(swap_result['error'])
-                                    st.session_state['show_swap_request'] = False
-                                else:
-                                    st.error(f"⚠️ {swap_result['error']}")
+                # Note about requesting a different issue
+                st.caption("If you would like to request a different issue, please contact jennjwang@stanford.edu with a justification. We will facilitate the swap if it is well-justified.")
 
             elif next_result['success'] and next_result['issue'] is None:
                 # All issues complete
-                st.success("🎉 You have completed all 4 assigned issues!")
+                st.success("You have completed all your assigned issues!")
                 st.markdown("""
                     <p style='font-size:18px; margin-top: 1rem;'>
                     Thank you for your participation. Please proceed to the final survey questions.

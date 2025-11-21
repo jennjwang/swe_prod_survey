@@ -18,8 +18,13 @@ def code_experience_page():
     
     # Get assigned repository info for context
     assigned_repo = st.session_state['survey_responses'].get('assigned_repository', 'N/A')
+    repo_url = st.session_state['survey_responses'].get('repository_url', '')
+
     if assigned_repo != 'N/A':
-        st.info(f"**Assigned Repository:** {assigned_repo}")
+        if repo_url:
+            st.info(f"**Assigned Repository:** [{assigned_repo}]({repo_url})")
+        else:
+            st.info(f"**Assigned Repository:** {assigned_repo}")
         st.markdown("<div style='margin-bottom: 1.5rem;'></div>", unsafe_allow_html=True)
     
     # Load previous response

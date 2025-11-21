@@ -14,12 +14,14 @@ def setup_checklist_page():
         "Please complete this checklist before starting your assigned issues."
     )
 
-    # # Display assigned repository for context
-    # assigned_repo = st.session_state['survey_responses'].get('assigned_repository', '')
-    # if assigned_repo:
-    #     st.info(f"**Your Assigned Repository:** {assigned_repo}")
+    # Display assigned repository for context
+    assigned_repo = st.session_state['survey_responses'].get('assigned_repository', '')
+    repo_url = st.session_state['survey_responses'].get('repository_url', '')
 
-    # st.markdown("### Setup Checklist")
+    if assigned_repo and repo_url:
+        st.info(f"**Your Assigned Repository:** [{assigned_repo}]({repo_url})")
+    elif assigned_repo:
+        st.info(f"**Your Assigned Repository:** {assigned_repo}")
 
     # Checkbox 1
     check1 = st.checkbox("**1. Read the Contributor Guide**", key="checklist_item_1")

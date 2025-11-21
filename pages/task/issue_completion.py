@@ -120,7 +120,7 @@ def issue_completion_page():
     if st.session_state.get('completion_choice') == 'not_completed':
         st.divider()
         st.info("""
-            **No problem!** Please continue working on your issue.
+            No problem! Please continue working on your issue.
 
             When you complete it and open a pull request, return to this page to submit your completion.
         """)
