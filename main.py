@@ -12,6 +12,7 @@ from pages import (
     participant_id_page,
     ai_tools_page,
     repository_assignment_page,
+    setup_checklist_page,
     code_experience_page,
     pre_study_complete_page,
 
@@ -59,7 +60,7 @@ def main():
     initialize_session_state()
     
     # Route to the appropriate page based on session state
-    # Organized by survey sections: Pre-study (0-6), Task (7-9), Post-PR (10-12), Post-Exp1 (13-14), Completion (15-16)
+    # Organized by survey sections: Pre-study (0-7), Task (8-10), Post-PR (11-13), Post-Exp1 (14-15), Completion (16-17)
     page_routes = {
         # Pre-study section
         # 0: consent_page,                    # Consent form
@@ -68,26 +69,27 @@ def main():
         # 2: developer_experience_page,      # Professional experience (REMOVED)
         3: ai_tools_page,                    # AI tools experience
         4: repository_assignment_page,       # Repository assignment
-        5: code_experience_page,             # Code experience questions
-        6: pre_study_complete_page,          # Pre-study completion
+        5: setup_checklist_page,             # Setup checklist and reminders
+        6: code_experience_page,             # Code experience questions
+        7: pre_study_complete_page,          # Pre-study completion
 
         # Task section
-        7: issue_assignment_page,            # Issue assignment
-        8: time_estimation_page,             # Time estimation
-        9: issue_completion_page,            # Issue completion & PR submission
+        8: issue_assignment_page,            # Issue assignment
+        9: time_estimation_page,             # Time estimation
+        10: issue_completion_page,           # Issue completion & PR submission
 
         # Post-PR section
-        10: ai_condition_questions_page,     # AI condition questions (AI users only)
-        11: post_issue_questions_page,       # Post-issue experience questions (all users) + interview audio
-        12: post_issue_reflection_page,      # Post-issue reflection (satisfaction, confidence, difficulty)
+        11: ai_condition_questions_page,     # AI condition questions (AI users only)
+        12: post_issue_questions_page,       # Post-issue experience questions (all users) + interview audio
+        13: post_issue_reflection_page,      # Post-issue reflection (satisfaction, confidence, difficulty)
 
         # Post-Exp1 section
-        13: study_val_page,                  # Study validation (workflow comparison)
-        14: ai_usage_page,                   # AI usage (AI perception + interview questions)
+        14: study_val_page,                  # Study validation (workflow comparison)
+        15: ai_usage_page,                   # AI usage (AI perception + interview questions)
 
         # Completion section
-        15: completion_page,                 # Single issue completion
-        16: thank_you_page                   # Final thank you (all issues complete)
+        16: completion_page,                 # Single issue completion
+        17: thank_you_page                   # Final thank you (all issues complete)
     }
     
     current_page = st.session_state.get('page', 0)

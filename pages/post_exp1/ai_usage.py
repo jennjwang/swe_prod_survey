@@ -186,7 +186,7 @@ def ai_usage_page():
                 return
 
         # Navigate to thank you page
-        st.session_state['page'] = 16  # Thank you page (page 16)
+        st.session_state['page'] = 17  # Thank you page (page 17)
         st.rerun()
 
     # Navigation

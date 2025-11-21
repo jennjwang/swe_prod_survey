@@ -65,7 +65,7 @@ def completion_page():
             col1, col2 = st.columns([1, 1])
             with col1:
                 if st.button("Continue to Next Issue", key="completion_continue", type="primary", use_container_width=True):
-                    st.session_state['page'] = 7  # Issue assignment page
+                    st.session_state['page'] = 8  # Issue assignment page
                     st.rerun()
         else:
             page_header(
@@ -95,10 +95,10 @@ def completion_page():
                 # Check if post-exp1 completed
                 if not post_exp1_completed:
                     # Go to study validation questions first
-                    st.session_state['page'] = 13  # Study validation page (page 13)
+                    st.session_state['page'] = 14  # Study validation page (page 14)
                 else:
                     # Already completed post-exp1, go to thank you
-                    st.session_state['page'] = 16  # Thank you page (page 16)
+                    st.session_state['page'] = 17  # Thank you page (page 17)
                 st.rerun()
     
     # Display participant details (common to both scenarios)

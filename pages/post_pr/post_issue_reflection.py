@@ -30,7 +30,7 @@ def post_issue_reflection_page():
         # Mark survey as complete for non-AI users
         from survey_data import save_pr_survey_completion_status
         save_pr_survey_completion_status(participant_id, int(issue_id), True)
-        st.session_state['page'] = 15  # completion page
+        st.session_state['page'] = 16  # completion page
         st.rerun()
         return
 
@@ -183,7 +183,7 @@ def post_issue_reflection_page():
             from survey_data import save_pr_survey_completion_status
             save_pr_survey_completion_status(participant_id, int(issue_id), True)
             # Navigate to completion page
-            st.session_state['page'] = 15  # completion page
+            st.session_state['page'] = 16  # completion page
             st.rerun()
         else:
             st.error(f"⚠️ Error saving responses: {result['error']}")

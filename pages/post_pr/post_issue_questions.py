@@ -33,7 +33,7 @@ def post_issue_questions_page():
         
         if completion_result['success'] and completion_result['completed']:
             # Already completed, redirect to already completed page
-            st.session_state['page'] = 15  # Already completed page (completion_page)
+            st.session_state['page'] = 16  # Already completed page (completion_page)
             st.rerun()
             return
     
@@ -180,7 +180,7 @@ def post_issue_questions_page():
         # Save to database and session state
         if handle_next():
             # Navigate to reflection page
-            st.session_state['page'] = 12  # post_issue_reflection_page
+            st.session_state['page'] = 13  # post_issue_reflection_page
             st.rerun()
     
     # Navigation

@@ -90,24 +90,24 @@ def participant_id_page():
                         if next_issue_result['success'] and next_issue_result['issue'] is None:
                             # All 4 issues completed, go to final completion
                             print("DEBUG: All 4 issues completed, routing to final completion")
-                            st.session_state['page'] = 16  # Thank you page (all issues complete)
+                            st.session_state['page'] = 17  # Thank you page (all issues complete)
                             st.rerun()
                         elif next_issue_result['success'] and next_issue_result['issue']:
                             # Has incomplete issues - always route to issue assignment page
                             # The issue assignment page will show progress and next issue
                             print("DEBUG: Has incomplete issues, routing to issue assignment page")
-                            st.session_state['page'] = 7  # Issue assignment page
+                            st.session_state['page'] = 8  # Issue assignment page
                             st.rerun()
                         else:
                             # Error or no issues, go to issue assignment page
                             print("DEBUG: Error or no issues, routing to issue assignment")
-                            st.session_state['page'] = 7  # Issue assignment page
+                            st.session_state['page'] = 8  # Issue assignment page
                             st.rerun()
                     else:
                         # Pre-study completed but no issue assigned, go to issue assignment page
                         st.info("✅ Welcome back! You've already completed the pre-study survey.")
                         print("DEBUG: Routing to issue assignment page (no issue assigned yet)")
-                        st.session_state['page'] = 7  # Issue assignment page
+                        st.session_state['page'] = 8  # Issue assignment page
                         st.rerun()
                 else:
                     # Couldn't check progress, just proceed normally (skip developer experience)

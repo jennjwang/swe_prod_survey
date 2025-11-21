@@ -21,8 +21,8 @@ def ai_condition_questions_page():
         print(f"DEBUG: AI condition check for issue {issue_id}: {ai_check}")
         if ai_check['success'] and not ai_check['using_ai']:
             # Not using AI for this issue, skip to post-issue questions page
-            print(f"DEBUG: Issue {issue_id} not using AI, skipping to page 11")
-            st.session_state['page'] = 11  # post_issue_questions_page
+            print(f"DEBUG: Issue {issue_id} not using AI, skipping to page 12")
+            st.session_state['page'] = 12  # post_issue_questions_page
             st.rerun()
             return
         print(f"DEBUG: Showing AI condition questions for issue {issue_id}")
@@ -117,7 +117,7 @@ def ai_condition_questions_page():
         if result['success']:
             print(f"✅ AI condition responses saved for participant {participant_id}")
             # Navigate to post-issue questions page
-            st.session_state['page'] = 11  # post_issue_questions_page
+            st.session_state['page'] = 12  # post_issue_questions_page
             st.rerun()
         else:
             st.error(f"⚠️ Error saving responses: {result['error']}")

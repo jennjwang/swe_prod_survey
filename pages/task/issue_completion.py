@@ -102,10 +102,10 @@ def issue_completion_page():
 
                         if progress_result['success'] and progress_result['progress']['survey_completed']:
                             # Survey already complete, go to completion page
-                            st.session_state['page'] = 15
+                            st.session_state['page'] = 16
                         else:
                             # Go to AI condition questions (will auto-skip if not using AI)
-                            st.session_state['page'] = 10
+                            st.session_state['page'] = 11
 
                         st.rerun()
                     else:

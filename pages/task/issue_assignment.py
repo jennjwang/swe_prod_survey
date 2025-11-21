@@ -8,7 +8,8 @@ from survey_utils import save_and_navigate
 from survey_data import (
     assign_all_issues_to_participant,
     check_all_issues_assigned,
-    get_next_issue_in_sequence
+    get_next_issue_in_sequence,
+    request_different_issue
 )
 
 
@@ -60,7 +61,7 @@ def issue_assignment_page():
                 st.session_state['show_ai_condition'] = False
                 st.session_state['ai_condition_value'] = None
                 # Navigate to time estimation page
-                st.session_state['page'] = 8  # time_estimation_page
+                st.session_state['page'] = 9  # time_estimation_page
                 st.rerun()
 
         return
@@ -95,8 +96,8 @@ def issue_assignment_page():
                 </p>
                 """, unsafe_allow_html=True)
 
-            col1, col2, col3 = st.columns([1, 2, 1])
-            with col2:
+            col1, col2 = st.columns([1, 1])
+            with col1:
                 if st.button("Get My Assignments", key="assign_all", type="primary", use_container_width=True):
                     with st.spinner('Assigning your issues...'):
                         assign_result = assign_all_issues_to_participant(participant_id, assigned_repo)
@@ -141,8 +142,7 @@ def issue_assignment_page():
                     st.warning(f"Issue ID: {issue_id} (URL not available)")
                     print(f"DEBUG: Issue data: {issue}")
 
-                # Navigation button
-                # st.markdown("<div style='margin-top: 2rem;'></div>", unsafe_allow_html=True)
+                # Navigation buttons
                 col1, col2 = st.columns([1, 1])
                 with col1:
                     if st.button("Start This Issue", key="start_issue", type="primary", use_container_width=True):
@@ -162,6 +162,52 @@ def issue_assignment_page():
                         st.session_state['show_ai_condition'] = True
                         st.session_state['ai_condition_value'] = using_ai
                         st.rerun()
+
+                with col2:
+                    if st.button("Request Different Issue", key="request_swap", use_container_width=True):
+                        st.session_state['show_swap_request'] = True
+                        st.rerun()
+
+                # Show swap request form if button was clicked
+                if st.session_state.get('show_swap_request', False):
+                    st.divider()
+                    st.markdown("### Request a Different Issue")
+                    st.warning("⚠️ You can only request a different issue **once**. Please provide a justification below.")
+
+                    justification = st.text_area(
+                        "Justification for requesting a different issue:",
+                        placeholder="Please explain why you need a different issue...",
+                        key="swap_justification",
+                        height=100
+                    )
+
+                    col_cancel, col_submit = st.columns([1, 1])
+                    with col_cancel:
+                        if st.button("Cancel", key="cancel_swap"):
+                            st.session_state['show_swap_request'] = False
+                            st.rerun()
+
+                    with col_submit:
+                        if st.button("Submit Request", key="submit_swap", type="primary"):
+                            if not justification or not justification.strip():
+                                st.error("⚠️ Please provide a justification for requesting a different issue.")
+                            else:
+                                with st.spinner("Processing your request..."):
+                                    swap_result = request_different_issue(
+                                        participant_id,
+                                        issue['issue_id'],
+                                        justification.strip()
+                                    )
+
+                                if swap_result['success']:
+                                    st.success("✅ Your issue has been swapped successfully!")
+                                    st.session_state['show_swap_request'] = False
+                                    st.rerun()
+                                elif swap_result['already_used']:
+                                    st.error(swap_result['error'])
+                                    st.session_state['show_swap_request'] = False
+                                else:
+                                    st.error(f"⚠️ {swap_result['error']}")
 
             elif next_result['success'] and next_result['issue'] is None:
                 # All issues complete

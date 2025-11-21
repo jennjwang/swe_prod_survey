@@ -582,6 +582,115 @@ def get_next_issue_in_sequence(participant_id: str):
 
 
 @safe_db_operation()
+def request_different_issue(participant_id: str, current_issue_id: int, justification: str):
+    """
+    Request a different issue. Participant can only do this once.
+    Swaps current issue with another unassigned issue from the same repository.
+
+    Args:
+        participant_id: The participant's ID
+        current_issue_id: The current issue ID to swap out
+        justification: Reason for requesting a different issue
+
+    Returns:
+        dict with 'success', 'new_issue', 'already_used', and 'error' keys
+    """
+    print(f"=== ISSUE SWAP REQUEST ===")
+    print(f"Participant: {participant_id}")
+    print(f"Current Issue: {current_issue_id}")
+    print(f"Justification: {justification}")
+
+    # Check if participant has already used their swap
+    result = supabase_client.table('pre-study')\
+        .select('issue_swap_used')\
+        .eq('participant_id', participant_id)\
+        .execute()
+
+    if result.data and len(result.data) > 0:
+        already_used = result.data[0].get('issue_swap_used', False)
+        if already_used:
+            print("Participant has already used their issue swap")
+            return {
+                'success': False,
+                'already_used': True,
+                'new_issue': None,
+                'error': 'You have already used your one-time issue swap.'
+            }
+
+    # Get current issue details
+    current_issue_result = supabase_client.table('repo-issues')\
+        .select('*')\
+        .eq('issue_id', current_issue_id)\
+        .execute()
+
+    if not current_issue_result.data:
+        return {
+            'success': False,
+            'already_used': False,
+            'new_issue': None,
+            'error': 'Current issue not found'
+        }
+
+    current_issue = current_issue_result.data[0]
+    repository = current_issue['repository']
+    sequence = current_issue['issue_sequence']
+    using_ai = current_issue['using_ai']
+
+    # Find a new unassigned issue from the same repository
+    new_issue_result = supabase_client.table('repo-issues')\
+        .select('*')\
+        .eq('repository', repository)\
+        .eq('is_assigned', False)\
+        .limit(1)\
+        .execute()
+
+    if not new_issue_result.data:
+        return {
+            'success': False,
+            'already_used': False,
+            'new_issue': None,
+            'error': 'No available issues to swap with. Please contact the study administrator.'
+        }
+
+    new_issue = new_issue_result.data[0]
+    new_issue_id = new_issue['issue_id']
+
+    # Unassign current issue (keep justification for tracking)
+    supabase_client.table('repo-issues').update({
+        'is_assigned': False,
+        'participant_id': None,
+        'accepted_on': None,
+        'using_ai': None,
+        'issue_sequence': None,
+        'swap_justification': justification  # Track why it was swapped
+    }).eq('issue_id', current_issue_id).execute()
+
+    # Assign new issue with same sequence and AI condition
+    from datetime import datetime, timezone
+    supabase_client.table('repo-issues').update({
+        'is_assigned': True,
+        'participant_id': participant_id,
+        'accepted_on': datetime.now(timezone.utc).isoformat(),
+        'using_ai': using_ai,
+        'issue_sequence': sequence
+    }).eq('issue_id', new_issue_id).execute()
+
+    # Mark swap as used in pre-study table
+    supabase_client.table('pre-study').update({
+        'issue_swap_used': True
+    }).eq('participant_id', participant_id).execute()
+
+    print(f"✅ Issue swap successful: {current_issue_id} -> {new_issue_id}")
+
+    return {
+        'success': True,
+        'already_used': False,
+        'new_issue': new_issue,
+        'error': None
+    }
+
+
+@safe_db_operation()
 def update_issue_time_estimate(issue_id: int, time_estimate: str):
     """
     Update the time estimate for an assigned issue.

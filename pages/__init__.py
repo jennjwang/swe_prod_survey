@@ -10,6 +10,7 @@ from .pre_study import (
     developer_experience_page,
     ai_tools_page,
     repository_assignment_page,
+    setup_checklist_page,
     code_experience_page,
     pre_study_complete_page
 )
@@ -40,6 +41,7 @@ __all__ = [
     'developer_experience_page',
     'ai_tools_page',
     'repository_assignment_page',
+    'setup_checklist_page',
     'code_experience_page',
     'pre_study_complete_page',
     
