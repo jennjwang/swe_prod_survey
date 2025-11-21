@@ -19,8 +19,6 @@ NASA_TLX_QUESTIONS = {
 NASA_TLX_OPTIONS = ["Not selected", "1 - Very low", "2", "3", "4", "5", "6", "7 - Very high"]
 
 
-
-
 def post_issue_questions_page():
     """Ask post-PR experience questions for all participants."""
     # Get participant info
@@ -35,7 +33,7 @@ def post_issue_questions_page():
         
         if completion_result['success'] and completion_result['completed']:
             # Already completed, redirect to already completed page
-            st.session_state['page'] = 14  # Already completed page (completion_page)
+            st.session_state['page'] = 15  # Already completed page (completion_page)
             st.rerun()
             return
     
@@ -43,7 +41,13 @@ def post_issue_questions_page():
         "General Experience",
         "Please tell us about your experience implementing this PR."
     )
-    
+
+    # Display assigned issue for context
+    issue_url = st.session_state['survey_responses'].get('issue_url', '')
+    if issue_url:
+        st.info(f"**Your Assigned Issue:** [{issue_url}]({issue_url})")
+        st.markdown("<div style='margin-bottom: 2rem;'></div>", unsafe_allow_html=True)
+
     # Load previous responses
     previous_responses = st.session_state['survey_responses'].get('post_issue', {})
     
@@ -88,7 +92,7 @@ def post_issue_questions_page():
             key="time_effort_description_text",
             value=previous_responses.get('time_effort_description', ''),
             height=150,
-            placeholder="Please describe where you spent the most time or effort while implementing this PR...",
+            placeholder="Type your answer here...",
             label_visibility="collapsed"
         )
 
@@ -137,11 +141,10 @@ def post_issue_questions_page():
 
         # Save responses to database
         result = save_post_issue_responses(participant_id, int(issue_id), db_responses)
-        
-        if result['success']:
-            # Save PR survey completion status
-            save_pr_survey_completion_status(participant_id, int(issue_id), True)
-        
+
+        # Note: Don't mark survey as completed here - it will be marked complete
+        # after the reflection page (for AI users) or in the reflection page skip logic (for non-AI users)
+
         return result
     
     # Custom navigation handler
@@ -176,8 +179,8 @@ def post_issue_questions_page():
 
         # Save to database and session state
         if handle_next():
-            # Navigate to completion page (checks if more issues, then redirects appropriately)
-            st.session_state['page'] = 14  # completion page
+            # Navigate to reflection page
+            st.session_state['page'] = 12  # post_issue_reflection_page
             st.rerun()
     
     # Navigation
@@ -186,8 +189,8 @@ def post_issue_questions_page():
         on_back=handle_back,
         on_next=handle_next_nav,
         back_key="post_issue_back",
-        next_key="post_issue_submit",
-        next_label="Submit",
+        next_key="post_issue_next",
+        next_label="Next",
         validation_fn=validate,
         validation_error="⚠️ Please fill out all fields before proceeding."
     )

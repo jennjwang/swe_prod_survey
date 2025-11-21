@@ -44,25 +44,25 @@ def thank_you_page():
             What happens next?
             </p>
             <p style='font-size:16px; margin-bottom: 1rem;'>
-            Your responses have been recorded and will contribute to understanding
-            the impact of AI tools on developer productivity.
+            Your responses have been recorded, and reviewers will begin reviewing your PRs. 
+            You should receive a notification once your PRs are reviewed.
             </p>
             <p style='font-size:16px; margin-bottom: 1rem;'>
-            If you have any questions or concerns about your participation,
-            please contact the study administrator.
+            If you have any questions or concerns,
+            please contact jennjwang@stanford.edu.
             </p>
         </div>
         """, unsafe_allow_html=True)
 
     # Optional: View all responses (for transparency)
-    with st.expander("View your survey responses"):
-        st.json(st.session_state['survey_responses'])
+    # with st.expander("View your survey responses"):
+    #     st.json(st.session_state['survey_responses'])
 
     st.markdown("---")
     st.markdown("""
         <div style='text-align: center; padding: 1rem 0;'>
             <p style='font-size:16px; color: #666;'>
-            Thank you again for your time and participation! 🙏
+            Thank you again for your time! 🙏
             </p>
         </div>
         """, unsafe_allow_html=True)

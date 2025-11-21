@@ -52,37 +52,21 @@ def completion_page():
 
             st.markdown(f"""
                 <p style='font-size:20px; margin-bottom: 2rem;'>
-                Thank you for completing this issue and survey! You have completed {completed_count} of {total_count} assigned issues.
+                Thank you for completing this issue and survey!
                 </p>
                 """, unsafe_allow_html=True)
 
-            st.success("This issue's survey completed successfully!")
+            # st.success("This issue's survey completed successfully!")
 
-            # Show next steps based on whether post-exp1 is completed
-            if not post_exp1_completed:
-                st.markdown("""
-                    <div style='background-color: #e3f2fd; border-left: 4px solid #2196F3; padding: 1.5rem; margin: 2rem 0; border-radius: 4px;'>
-                        <p style='font-size:18px; font-weight: 600; margin-bottom: 1rem; color: #1565c0;'>
-                        Next: Questions About This Issue
-                        </p>
-                        <p style='font-size:16px; margin: 0; color: #555;'>
-                        Before moving to your next issue, we have a few questions about your experience with this one.
-                        </p>
-                    </div>
-                    """, unsafe_allow_html=True)
+            st.info(
+                f"You have completed {completed_count} of {total_count} assigned issues."
+            )
 
-                # Continue button to post-exp1
-                st.markdown("<div style='margin-top: 2rem;'></div>", unsafe_allow_html=True)
-                col1, col2, col3 = st.columns([2, 1, 2])
-                with col2:
-                    if st.button("Continue", key="completion_has_more_continue", type="primary", use_container_width=True):
-                        st.session_state['page'] = 12  # Study validation page (page 12)
-                        st.rerun()
-            else:
-                st.info("""
-                    **Next Steps:**
-                    You have more issues assigned to you. Please return to the issue assignment page to continue with your next issue.
-                """)
+            col1, col2 = st.columns([1, 1])
+            with col1:
+                if st.button("Continue to Next Issue", key="completion_continue", type="primary", use_container_width=True):
+                    st.session_state['page'] = 7  # Issue assignment page
+                    st.rerun()
         else:
             page_header(
                 "All Issues Complete!",
@@ -111,10 +95,10 @@ def completion_page():
                 # Check if post-exp1 completed
                 if not post_exp1_completed:
                     # Go to study validation questions first
-                    st.session_state['page'] = 12  # Study validation page (page 12)
+                    st.session_state['page'] = 13  # Study validation page (page 13)
                 else:
                     # Already completed post-exp1, go to thank you
-                    st.session_state['page'] = 15  # Thank you page (page 15)
+                    st.session_state['page'] = 16  # Thank you page (page 16)
                 st.rerun()
     
     # Display participant details (common to both scenarios)

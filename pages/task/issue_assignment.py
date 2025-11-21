@@ -5,7 +5,11 @@ Issue assignment page for the survey.
 import streamlit as st
 from survey_components import page_header
 from survey_utils import save_and_navigate
-from survey_data import get_random_unassigned_issue, assign_issue_to_participant
+from survey_data import (
+    assign_all_issues_to_participant,
+    check_all_issues_assigned,
+    get_next_issue_in_sequence
+)
 
 
 def issue_assignment_page():
@@ -50,7 +54,7 @@ def issue_assignment_page():
         # Acknowledgment button
         col1, col2 = st.columns([1, 1])
         with col1:
-            acknowledge_text = "I understand and will use AI tools" if using_ai else "I understand and will NOT use AI tools"
+            acknowledge_text = "I understand" if using_ai else "I understand and will NOT use AI tools"
             if st.button(acknowledge_text, key="acknowledge_ai", type="primary", use_container_width=True):
                 # Clear the acknowledgment flag
                 st.session_state['show_ai_condition'] = False
@@ -63,123 +67,115 @@ def issue_assignment_page():
 
     page_header(
         "Issue Assignment",
-        "You will be assigned an issue to work on from your repository."
+        "You will be assigned issues to work on from your repository."
     )
 
     # Get participant info from session state
     participant_id = st.session_state['survey_responses'].get('participant_id', '')
     assigned_repo = st.session_state['survey_responses'].get('assigned_repository', '')
-    
-    # Check if already assigned
-    already_assigned = st.session_state['survey_responses'].get('assigned_issue', None)
-    
+
     # Display context
-    if participant_id:
-        st.info(f"**Participant ID:** {participant_id}")
+    # if participant_id:
+    #     st.info(f"**Participant ID:** {participant_id}")
     if assigned_repo:
         st.info(f"**Assigned Repository:** {assigned_repo}")
-    
-    st.divider()
-    
-    # Issue assignment logic
-    if already_assigned:
-        # Issue already accepted and assigned in database
-        issue_url = st.session_state['survey_responses'].get('issue_url')
-        st.success("You have accepted your issue assignment!")
-        st.markdown(f"""
-            <p style='font-size:18px; margin-top: 1rem;'>
-            <strong>Assigned Issue:</strong> <a href="{issue_url}" target="_blank">{issue_url}</a>
-            </p>
-            """, unsafe_allow_html=True)
-    else:
-        # Get a random issue to preview (not assigned yet)
-        if 'preview_issue' not in st.session_state:
-            if participant_id and assigned_repo:
-                with st.spinner('Finding an issue for you...'):
-                    result = get_random_unassigned_issue(assigned_repo)
-                
-                if result['success']:
-                    st.session_state['preview_issue'] = result['issue']
-                else:
-                    st.error(f"⚠️ {result['error']}")
-                    st.warning("Please contact the study administrator if this issue persists.")
-        
-        # Show preview issue if available
-        if 'preview_issue' in st.session_state:
-            preview_issue = st.session_state['preview_issue']
-            issue_url = preview_issue['url']
-            
+
+    # st.divider()
+
+    # Check if participant already has all 4 issues assigned
+    if participant_id:
+        check_result = check_all_issues_assigned(participant_id)
+
+        if check_result['success'] and not check_result['all_assigned']:
+            # First time - assign all 4 issues at once
             st.markdown("""
-                <p style='font-size:18px; margin-top: 1rem; margin-bottom: 1rem;'>
-                <strong>Your Assigned Issue:</strong>
+                <p style='font-size:18px; margin-bottom: 1.5rem;'>
+                You will be assigned <strong>4 issues</strong> to complete during this study.
+                The issues and AI conditions have been randomly assigned.
                 </p>
                 """, unsafe_allow_html=True)
-            
-            st.markdown(f"""
-                <p style='font-size:18px;'>
-                <a href="{issue_url}" target="_blank">{issue_url}</a>
-                </p>
-                """, unsafe_allow_html=True)
-            
-            st.info("Please review the issue above. When you're ready, click 'Accept Assignment' to confirm.")
-    
-    # Navigation buttons (no back button)
-    st.markdown("<div style='margin-top: 2rem;'></div>", unsafe_allow_html=True)
-    
-    if already_assigned:
-        # Standard layout for Next button
-        col1, col2, col3 = st.columns([4, 1, 1])
-        with col3:
-            next_clicked = st.button("Next", key="issue_next")
-    else:
-        # Centered Accept Assignment button
-        col1, col2, col3 = st.columns([1, 2, 1])
-        with col2:
-            next_clicked = st.button("Accept Assignment", key="issue_accept", type="primary", use_container_width=True)
-    
-    if next_clicked:
-        if already_assigned:
-            # Already assigned, go to time estimation
-            st.session_state['page'] = 8  # time_estimation_page
-            st.rerun()
-        else:
-            # Accept and assign the issue in database
-            if 'preview_issue' in st.session_state:
-                preview_issue = st.session_state['preview_issue']
-                
-                # Console debug output only (not on screen)
-                print(f"DEBUG: Participant ID = {participant_id}")
-                print(f"DEBUG: Issue ID = {preview_issue['id']}")
-                print(f"DEBUG: Issue data = {preview_issue}")
-                
-                with st.spinner('Confirming your assignment...'):
-                    assign_result = assign_issue_to_participant(participant_id, preview_issue['id'])
-                
-                print(f"DEBUG: Assignment result = {assign_result}")
-                
-                if assign_result['success']:
-                    # Clear preview
-                    if 'preview_issue' in st.session_state:
-                        del st.session_state['preview_issue']
 
-                    # Reset post-exp1 completion flag for new issue
-                    st.session_state['post_exp1_completed'] = False
+            col1, col2, col3 = st.columns([1, 2, 1])
+            with col2:
+                if st.button("Get My Assignments", key="assign_all", type="primary", use_container_width=True):
+                    with st.spinner('Assigning your issues...'):
+                        assign_result = assign_all_issues_to_participant(participant_id, assigned_repo)
 
-                    # Save to session state
-                    st.session_state['survey_responses']['assigned_issue'] = preview_issue
-                    st.session_state['survey_responses']['issue_url'] = preview_issue['url']
-                    st.session_state['survey_responses']['issue_id'] = preview_issue['id']
+                    if assign_result['success']:
+                        st.success("✅ All 4 issues assigned successfully!")
+                        st.rerun()
+                    else:
+                        st.error(f"⚠️ Error assigning issues: {assign_result['error']}")
+                        st.warning("Please contact the study administrator if this issue persists.")
 
-                    # Display AI condition to the participant and require acknowledgment
-                    using_ai = assign_result.get('using_ai', False)
-                    st.session_state['survey_responses']['current_issue_using_ai'] = using_ai
+        elif check_result['success'] and check_result['all_assigned']:
+            # Get next issue in sequence
+            next_result = get_next_issue_in_sequence(participant_id)
 
-                    # Set flag to show AI condition acknowledgment
-                    st.session_state['show_ai_condition'] = True
-                    st.session_state['ai_condition_value'] = using_ai
-                    st.rerun()
+            if next_result['success'] and next_result['issue']:
+                # Show next issue
+                issue = next_result['issue']
+                sequence = next_result['sequence']
+                total_completed = next_result['total_completed']
+
+                # Progress indicator
+                st.info(f"**Progress:** {total_completed} of 4 issues completed")
+
+                # Show issue details
+                issue_url = issue.get('issue_url', '') or issue.get('url', '')
+                issue_id = issue.get('issue_id', '')
+
+                st.markdown("""
+                    <p style='font-size:18px; margin-top: 1rem; margin-bottom: 1rem;'>
+                    <strong>Your Next Issue:</strong>
+                    </p>
+                    """, unsafe_allow_html=True)
+
+                if issue_url:
+                    st.markdown(f"""
+                        <p style='font-size:18px;'>
+                        <a href="{issue_url}" target="_blank">{issue_url}</a>
+                        </p>
+                        """, unsafe_allow_html=True)
                 else:
-                    st.error(f"⚠️ Error assigning issue: {assign_result['error']}")
-                    print("Check the console/terminal for detailed error logs")
+                    st.warning(f"Issue ID: {issue_id} (URL not available)")
+                    print(f"DEBUG: Issue data: {issue}")
+
+                # Navigation button
+                # st.markdown("<div style='margin-top: 2rem;'></div>", unsafe_allow_html=True)
+                col1, col2 = st.columns([1, 1])
+                with col1:
+                    if st.button("Start This Issue", key="start_issue", type="primary", use_container_width=True):
+                        # Save issue info to session state
+                        st.session_state['survey_responses']['assigned_issue'] = issue
+                        st.session_state['survey_responses']['issue_url'] = issue_url
+                        st.session_state['survey_responses']['issue_id'] = issue['issue_id']
+
+                        # Reset post-exp1 completion flag for new issue
+                        st.session_state['post_exp1_completed'] = False
+
+                        # Get AI condition and show acknowledgment
+                        using_ai = issue.get('using_ai', False)
+                        st.session_state['survey_responses']['current_issue_using_ai'] = using_ai
+
+                        # Set flag to show AI condition acknowledgment
+                        st.session_state['show_ai_condition'] = True
+                        st.session_state['ai_condition_value'] = using_ai
+                        st.rerun()
+
+            elif next_result['success'] and next_result['issue'] is None:
+                # All issues complete
+                st.success("🎉 You have completed all 4 assigned issues!")
+                st.markdown("""
+                    <p style='font-size:18px; margin-top: 1rem;'>
+                    Thank you for your participation. Please proceed to the final survey questions.
+                    </p>
+                    """, unsafe_allow_html=True)
+
             else:
-                st.error("⚠️ No issue available. Please refresh the page or contact the administrator.")
+                st.error(f"⚠️ Error retrieving next issue: {next_result.get('error', 'Unknown error')}")
+
+        else:
+            st.error("⚠️ Error checking issue assignments. Please contact the study administrator.")
+    else:
+        st.warning("Please complete the pre-study survey first to receive your issue assignments.")

@@ -2,6 +2,7 @@
 Data layer for database operations.
 """
 
+from typing import Dict, Any, Optional
 import streamlit as st
 import functools
 import traceback
@@ -25,6 +26,21 @@ def get_supabase_client():
 
 
 supabase_client = get_supabase_client()
+
+
+def extract_repo_name(repo_string: str) -> str:
+    """
+    Extract repository name from owner/repo format.
+
+    Args:
+        repo_string: Repository string (e.g., "owner/repo" or "repo")
+
+    Returns:
+        Repository name only (e.g., "repo")
+    """
+    if '/' in repo_string:
+        return repo_string.split('/')[-1]
+    return repo_string
 
 
 def safe_db_operation(error_defaults=None, success_key='success'):
@@ -388,6 +404,184 @@ def assign_issue_to_participant(participant_id: str, issue_id: int):
 
 
 @safe_db_operation()
+def assign_all_issues_to_participant(participant_id: str, repository: str):
+    """
+    Assign all 4 issues to a participant at once with randomized order and AI conditions.
+
+    Args:
+        participant_id: The participant's ID
+        repository_name: The repository name to get issues from
+
+    Returns:
+        dict with 'success', 'error', and 'issues' keys
+    """
+    print(f"=== ASSIGNING ALL 4 ISSUES TO PARTICIPANT ===")
+    print(f"Participant: {participant_id}")
+    print(f"Repository: {repository}")
+
+    # Get 4 random unassigned issues from the repository
+    result = supabase_client.table('repo-issues')\
+        .select('*')\
+        .eq('repository', repository)\
+        .eq('is_assigned', False)\
+        .limit(4)\
+        .execute()
+
+    if not result.data or len(result.data) < 4:
+        error_msg = f"Not enough unassigned issues available. Found {len(result.data) if result.data else 0}, need 4."
+        print(f"⚠️ {error_msg}")
+        return {
+            'success': False,
+            'error': error_msg,
+            'issues': []
+        }
+
+    issues = result.data
+    print(f"Found {len(issues)} unassigned issues")
+
+    # Randomly shuffle the issues to randomize order
+    import random
+    random.shuffle(issues)
+
+    # Randomly assign AI conditions (2 with AI, 2 without)
+    ai_conditions = [True, True, False, False]
+    random.shuffle(ai_conditions)
+
+    # Assign all 4 issues with sequence numbers and AI conditions
+    from datetime import datetime, timezone
+    assigned_issues = []
+
+    for idx, issue in enumerate(issues):
+        issue_id = issue['issue_id']
+        sequence = idx + 1  # 1, 2, 3, 4
+        using_ai = ai_conditions[idx]
+
+        update_data = {
+            'is_assigned': True,
+            'participant_id': participant_id,
+            'accepted_on': datetime.now(timezone.utc).isoformat(),
+            'using_ai': using_ai,
+            'issue_sequence': sequence
+        }
+
+        print(f"Assigning issue {issue_id}: sequence={sequence}, using_ai={using_ai}")
+
+        update_result = supabase_client.table('repo-issues')\
+            .update(update_data)\
+            .eq('issue_id', issue_id)\
+            .execute()
+
+        if update_result.data and len(update_result.data) > 0:
+            assigned_issues.append({
+                **issue,
+                'issue_sequence': sequence,
+                'using_ai': using_ai
+            })
+        else:
+            print(f"⚠️ Failed to assign issue {issue_id}")
+
+    if len(assigned_issues) == 4:
+        print(f"✅ Successfully assigned all 4 issues to participant {participant_id}")
+        return {
+            'success': True,
+            'error': None,
+            'issues': assigned_issues
+        }
+    else:
+        return {
+            'success': False,
+            'error': f"Only {len(assigned_issues)} of 4 issues were successfully assigned",
+            'issues': assigned_issues
+        }
+
+
+@safe_db_operation()
+def check_all_issues_assigned(participant_id: str):
+    """
+    Check if a participant has all 4 issues assigned.
+
+    Args:
+        participant_id: The participant's ID
+
+    Returns:
+        dict with 'success', 'all_assigned' (bool), and 'count' keys
+    """
+    result = supabase_client.table('repo-issues')\
+        .select('issue_id', count='exact')\
+        .eq('participant_id', participant_id)\
+        .execute()
+
+    count = result.count if hasattr(result, 'count') else (len(result.data) if result.data else 0)
+
+    print(f"Participant {participant_id} has {count} issues assigned")
+
+    return {
+        'success': True,
+        'all_assigned': count == 4,
+        'count': count
+    }
+
+
+@safe_db_operation()
+def get_next_issue_in_sequence(participant_id: str):
+    """
+    Get the next incomplete issue in sequence for a participant.
+
+    Args:
+        participant_id: The participant's ID
+
+    Returns:
+        dict with 'success', 'issue', 'sequence', 'total_completed' keys
+    """
+    # Get all issues for participant ordered by sequence
+    result = supabase_client.table('repo-issues')\
+        .select('*')\
+        .eq('participant_id', participant_id)\
+        .order('issue_sequence')\
+        .execute()
+
+    if not result.data:
+        return {
+            'success': False,
+            'error': 'No issues found for participant',
+            'issue': None,
+            'sequence': None,
+            'total_completed': 0
+        }
+
+    issues = result.data
+    total_completed = sum(1 for issue in issues if issue.get('is_completed', False))
+
+    # Find first incomplete issue
+    next_issue = None
+    for issue in issues:
+        if not issue.get('is_completed', False):
+            next_issue = issue
+            break
+
+    if next_issue:
+        sequence = next_issue.get('issue_sequence', 0)
+        print(f"Next issue for participant {participant_id}: sequence {sequence}, issue_id {next_issue['issue_id']}")
+        return {
+            'success': True,
+            'issue': next_issue,
+            'sequence': sequence,
+            'total_completed': total_completed,
+            'error': None
+        }
+    else:
+        # All issues complete
+        print(f"All issues complete for participant {participant_id}")
+        return {
+            'success': True,
+            'issue': None,
+            'sequence': None,
+            'total_completed': total_completed,
+            'error': None
+        }
+
+
+@safe_db_operation()
 def update_issue_time_estimate(issue_id: int, time_estimate: str):
     """
     Update the time estimate for an assigned issue.
@@ -691,6 +885,57 @@ def save_post_issue_responses(participant_id: str, issue_id: int, responses: dic
         return {
             'success': False,
             'error': f"Failed to save post-issue responses - RLS policy blocked insert"
+        }
+
+
+@safe_db_operation()
+def save_post_issue_reflection(participant_id: str, issue_id: int, responses: dict):
+    """
+    Save post-issue reflection responses to the database.
+
+    Args:
+        participant_id: The participant's ID
+        issue_id: The issue's ID
+        responses: Dictionary of reflection responses (satisfaction, confidence, difficulty, challenge)
+
+    Returns:
+        dict with 'success' and 'error' keys
+    """
+    print(f"=== SAVING POST-ISSUE REFLECTION ===")
+    print(f"Participant ID: {participant_id}")
+    print(f"Issue ID: {issue_id}")
+    print(f"Responses: {responses}")
+
+    # Update the existing post-PR record with reflection data
+    data = responses
+
+    # Check if record exists
+    existing_record = supabase_client.table('post-PR').select('participant_id').eq('participant_id', participant_id).eq('issue_id', issue_id).execute()
+
+    if existing_record.data and len(existing_record.data) > 0:
+        # Record exists, update it with reflection data
+        print(f"Updating existing record with reflection data for participant {participant_id}, issue {issue_id}")
+        result = supabase_client.table('post-PR').update(data).eq('participant_id', participant_id).eq('issue_id', issue_id).execute()
+
+        print(f"Database operation result: {result}")
+
+        if result.data and len(result.data) > 0:
+            print(f"✅ Successfully saved post-issue reflection for participant {participant_id}")
+            return {
+                'success': True,
+                'error': None
+            }
+        else:
+            print(f"⚠️ Update returned empty data")
+            return {
+                'success': False,
+                'error': f"Failed to save post-issue reflection"
+            }
+    else:
+        print(f"⚠️ No existing post-PR record found for participant {participant_id}, issue {issue_id}")
+        return {
+            'success': False,
+            'error': "No existing post-PR record found. Please complete post-issue questions first."
         }
 
 

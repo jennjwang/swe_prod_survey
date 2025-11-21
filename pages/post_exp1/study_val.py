@@ -22,7 +22,7 @@ def study_val_page():
     # Question: Workflow comparison
     st.markdown("""
         <p style='font-size:18px; font-weight:400; margin-bottom: 1.5rem;'>
-        How different did your workflow in this study feel compared to your normal day-to-day responsibilities? How did the issues you worked on during this study compare to the issues you handle in your work?
+        How did your workflow in this study compare to the way you usually work on open-source projects? And how did the issues we gave you compare to the ones you’ve worked on before? 
         </p>
         """, unsafe_allow_html=True)
 

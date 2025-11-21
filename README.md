@@ -1,6 +1,6 @@
 # Developer Productivity Survey Application
 
-This directory contains a Streamlit-based survey application for studying the impact of AI on developer productivity.
+A Streamlit-based survey application for studying the impact of AI on developer productivity. Participants complete a multi-issue study where AI assistance is randomly assigned per issue (2 with AI, 2 without).
 
 ## 📁 File Structure
 
@@ -49,21 +49,21 @@ survey/
 **Structure:**
 - `pages/pre_study/` - Initial survey pages
   - Consent form
-  - Participant ID entry
-  - Developer experience questions
-  - AI tools experience
+  - Participant email entry (email-based authentication)
+  - AI tools experience (LLM and AI agent hours)
   - Repository assignment
   - Code experience questions
   - Pre-study completion
 
 - `pages/task/` - Task execution pages
-  - Issue assignment
+  - Issue assignment with AI condition acknowledgment
   - Time estimation
   - Issue completion & PR submission
 
 - `pages/post_pr/` - Post-task survey pages
   - AI condition questions (for AI users)
-  - Post-issue experience questions
+  - Post-issue experience questions (NASA-TLX scales + audio/text input for time/effort)
+  - Post-issue reflection (AI users only - code quality, work division, decision-making)
   - Completion page
 
 - `pages/post_exp1/` - Final survey pages
@@ -75,10 +75,18 @@ survey/
 
 **Purpose:** Database operations and Supabase integration
 
-- Provides Supabase client initialization
-- Supports both dev and prod modes
-- Handles all database interactions
+- Provides Supabase client initialization with dev/prod mode support
+- Handles all database interactions with error handling decorator (`@safe_db_operation`)
 - Manages survey response storage and retrieval
+- **AI Condition Assignment**: Randomly assigns AI usage per issue (ensures 2 with AI, 2 without per participant)
+- **Participant Authentication**: Email-based participant identification (case-insensitive)
+- Key functions:
+  - `assign_issue_to_participant()` - Assigns issues with random AI condition balancing (ensures 2-2 split)
+  - `check_participant_ai_condition()` - Checks AI flag for specific issues from repo-issues table
+  - `save_post_issue_responses()` - Saves NASA-TLX and time/effort data
+  - `save_post_issue_reflection()` - Saves AI reflection data (code quality, work division, decision-making)
+  - `validate_participant_id()` - Case-insensitive email validation
+  - `extract_repo_name()` - Helper function for consistent repository name extraction
 
 ### `survey_utils.py`
 
@@ -87,6 +95,7 @@ survey/
 **Key Functions:**
 - `next_page()` - Navigate to the next survey page
 - `previous_page()` - Navigate to the previous page
+- `record_audio()` - Record and transcribe audio responses using OpenAI Whisper API
 - OpenAI client initialization for AI-powered features
 
 ### `survey_components.py`
@@ -96,6 +105,9 @@ survey/
 **Components:**
 - `page_header()` - Consistent page headers
 - `question_label()` - Formatted question labels
+- `slider_question()` - Slider input with custom styling (used for NASA-TLX scales)
+- `text_input_question()` - Text input fields
+- `navigation_buttons()` - Consistent navigation with validation
 - Other shared UI elements
 
 ### `survey_questions.py`
@@ -196,8 +208,38 @@ pip install -r requirements.txt
 ## 🔧 Configuration
 
 - **Streamlit config:** `.streamlit/config.toml`
-- **Secrets:** Use Streamlit secrets management for API keys and database credentials
-- **Mode switching:** Set `MODE` to 'dev' or 'prod' in secrets
+- **Secrets:** Use Streamlit secrets management for:
+  - `SUPABASE_URL` and `SUPABASE_KEY` (production)
+  - `SUPABASE_DEV_URL` and `SUPABASE_DEV_KEY` (development)
+  - `OPENAI_KEY` (for audio transcription)
+  - `MODE` - Set to 'dev' or 'prod'
+
+## 🎯 Key Features
+
+### AI Condition Randomization
+- Each participant completes 4 issues total
+- AI usage is randomly assigned per issue (not per participant)
+- Ensures balanced 2-2 split: 2 issues with AI, 2 without
+- Participants explicitly acknowledge AI condition before starting each issue
+
+### Email-Based Authentication
+- Participant IDs are now email addresses (strings)
+- Case-insensitive email matching for robustness
+- No numeric conversion required
+
+### Multi-Issue Workflow
+1. Participant enters email → Pre-study survey (AI experience, code experience)
+2. Issue 1 assigned → AI condition revealed & acknowledged → Time estimation → Work → Post-issue survey
+3. Issue 2 assigned → AI condition revealed & acknowledged → Time estimation → Work → Post-issue survey
+4. Issue 3 assigned → AI condition revealed & acknowledged → Time estimation → Work → Post-issue survey
+5. Issue 4 assigned → AI condition revealed & acknowledged → Time estimation → Work → Post-issue survey
+6. Post-experiment survey (workflow comparison, AI perception) → Completion
+
+### Audio/Text Input Support
+- Post-issue questions include flexible input options
+- Participants can record audio responses (auto-transcribed via OpenAI Whisper API)
+- Or type text responses directly
+- Particularly useful for open-ended questions like "Where did you spend the most time or effort?"
 
 ## 📚 Additional Documentation
 

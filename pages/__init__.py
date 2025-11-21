@@ -23,6 +23,7 @@ from .task import (
 from .post_pr import (
     ai_condition_questions_page,
     post_issue_questions_page,
+    post_issue_reflection_page,
     completion_page
 )
 
@@ -50,6 +51,7 @@ __all__ = [
     # Post-PR pages
     'ai_condition_questions_page',
     'post_issue_questions_page',
+    'post_issue_reflection_page',
     'completion_page',
     'thank_you_page',
 

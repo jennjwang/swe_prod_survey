@@ -32,6 +32,12 @@ def ai_condition_questions_page():
         "Please tell us about your experience using AI tools for this task."
     )
 
+    # Display assigned issue for context
+    issue_url = st.session_state['survey_responses'].get('issue_url', '')
+    if issue_url:
+        st.info(f"**Your Assigned Issue:** [{issue_url}]({issue_url})")
+        st.markdown("<div style='margin-bottom: 2rem;'></div>", unsafe_allow_html=True)
+
     # Load previous response
     previous_response = st.session_state['survey_responses'].get('ai_code_quality_description', '')
 

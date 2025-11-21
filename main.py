@@ -23,6 +23,7 @@ from pages import (
     # Post-PR pages
     ai_condition_questions_page,
     post_issue_questions_page,
+    post_issue_reflection_page,
 
     # Post-Exp1 pages
     study_val_page,
@@ -58,7 +59,7 @@ def main():
     initialize_session_state()
     
     # Route to the appropriate page based on session state
-    # Organized by survey sections: Pre-study (0-6), Task (7-9), Post-PR (10-11), Post-Exp1 (12-13), Completion (14-15)
+    # Organized by survey sections: Pre-study (0-6), Task (7-9), Post-PR (10-12), Post-Exp1 (13-14), Completion (15-16)
     page_routes = {
         # Pre-study section
         # 0: consent_page,                    # Consent form
@@ -78,14 +79,15 @@ def main():
         # Post-PR section
         10: ai_condition_questions_page,     # AI condition questions (AI users only)
         11: post_issue_questions_page,       # Post-issue experience questions (all users) + interview audio
+        12: post_issue_reflection_page,      # Post-issue reflection (satisfaction, confidence, difficulty)
 
         # Post-Exp1 section
-        12: study_val_page,                  # Study validation (workflow comparison)
-        13: ai_usage_page,                   # AI usage (AI perception + interview questions)
+        13: study_val_page,                  # Study validation (workflow comparison)
+        14: ai_usage_page,                   # AI usage (AI perception + interview questions)
 
         # Completion section
-        14: completion_page,                 # Single issue completion
-        15: thank_you_page                   # Final thank you (all issues complete)
+        15: completion_page,                 # Single issue completion
+        16: thank_you_page                   # Final thank you (all issues complete)
     }
     
     current_page = st.session_state.get('page', 0)

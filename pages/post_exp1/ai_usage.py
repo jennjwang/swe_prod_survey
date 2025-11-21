@@ -106,7 +106,7 @@ def ai_usage_page():
 
     st.markdown("""
         <p style='font-size:18px; font-weight:400; margin-bottom: 1.5rem;'>
-        How would you describe an "ideal" interaction with your coding tools? What do you wish these tools did differently?
+        What does an ideal interaction with an AI coding assistant look like for you? What do you wish these tools did differently?
         </p>
         """, unsafe_allow_html=True)
 
@@ -186,7 +186,7 @@ def ai_usage_page():
                 return
 
         # Navigate to thank you page
-        st.session_state['page'] = 15  # Thank you page (page 15)
+        st.session_state['page'] = 16  # Thank you page (page 16)
         st.rerun()
 
     # Navigation
