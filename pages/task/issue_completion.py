@@ -16,10 +16,17 @@ def issue_completion_page():
     participant_id = st.session_state['survey_responses'].get('participant_id', '')
     issue_url = st.session_state['survey_responses'].get('issue_url', '')
     issue_id = st.session_state['survey_responses'].get('issue_id', '')
+    using_ai = st.session_state['survey_responses'].get('current_issue_using_ai', False)
 
     # Display issue details
     if issue_url:
         st.info(f"**Your Assigned Issue:** [{issue_url}]({issue_url})")
+
+    # Display AI condition
+    if using_ai:
+        st.warning("**AI Condition:** You MAY use AI tools for this issue.")
+    else:
+        st.warning("**AI Condition:** You should NOT use AI tools for this issue.")
 
     st.divider()
 
@@ -115,12 +122,12 @@ def issue_completion_page():
         st.info("""
             **No problem!** Please continue working on your issue.
 
-            When you complete it and open a pull request, return to this page and click "Yes, I've completed it" to submit your completion.
+            When you complete it and open a pull request, return to this page to submit your completion.
         """)
 
-        if st.button("Got it", key="clear_not_completed"):
-            st.session_state['completion_choice'] = None
-            st.rerun()
+        # if st.button("Got it", key="clear_not_completed"):
+        #     st.session_state['completion_choice'] = None
+        #     st.rerun()
 
-        st.caption("💡 You can refresh this page anytime to check back or submit your completion.")
+        # st.caption("💡 You can refresh this page anytime to check back or submit your completion.")
 

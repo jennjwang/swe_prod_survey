@@ -65,16 +65,10 @@ def participant_id_page():
                             }
                         })
                         st.session_state['pre_study_saved'] = True
-                    
-                    # Load issue data if it exists
-                    if progress['issue_assigned'] and progress['issue_data']:
-                        issue_data = progress['issue_data']
-                        st.session_state['survey_responses'].update({
-                            'assigned_issue': issue_data,
-                            'issue_url': issue_data.get('issue_url'),
-                            'issue_id': issue_data.get('issue_id')
-                        })
-                    
+
+                    # Note: Issue data is loaded later based on get_next_issue_in_sequence()
+                    # to ensure we load the correct next incomplete issue, not just the first issue
+
                     # Debug output
                     print(f"DEBUG: Progress data: {progress}")
                     print(f"DEBUG: pre_study_completed = {progress['pre_study_completed']}")
@@ -99,34 +93,11 @@ def participant_id_page():
                             st.session_state['page'] = 16  # Thank you page (all issues complete)
                             st.rerun()
                         elif next_issue_result['success'] and next_issue_result['issue']:
-                            # Has incomplete issues, go to issue assignment page
-                            next_issue = next_issue_result['issue']
-                            has_time_estimate = next_issue.get('participant_estimate') is not None
-                            issue_completed = next_issue.get('is_completed', False)
-
-                            if issue_completed:
-                                # Current issue completed but survey might not be done, check
-                                survey_completed = next_issue.get('survey_completed', False)
-                                if not survey_completed:
-                                    # Survey not completed, go to post-issue questions
-                                    print("DEBUG: Issue completed but survey not done, routing to post-issue questions")
-                                    st.session_state['page'] = 10  # AI condition questions page
-                                    st.rerun()
-                                else:
-                                    # Survey completed, go to issue assignment for next issue
-                                    print("DEBUG: Issue and survey completed, routing to issue assignment")
-                                    st.session_state['page'] = 7  # Issue assignment page
-                                    st.rerun()
-                            elif not has_time_estimate:
-                                # Issue assigned but no time estimate yet
-                                print("DEBUG: No time estimate yet, routing to time estimation")
-                                st.session_state['page'] = 8  # Time estimation page
-                                st.rerun()
-                            else:
-                                # Has time estimate but not completed, go to issue completion
-                                print("DEBUG: Issue not completed, routing to issue completion")
-                                st.session_state['page'] = 9  # Issue completion page
-                                st.rerun()
+                            # Has incomplete issues - always route to issue assignment page
+                            # The issue assignment page will show progress and next issue
+                            print("DEBUG: Has incomplete issues, routing to issue assignment page")
+                            st.session_state['page'] = 7  # Issue assignment page
+                            st.rerun()
                         else:
                             # Error or no issues, go to issue assignment page
                             print("DEBUG: Error or no issues, routing to issue assignment")
