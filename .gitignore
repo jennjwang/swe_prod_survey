@@ -4,3 +4,5 @@ updated_occupation_categories.csv
 survey.py
 __pycache__/*
 *pycache*
+.specstory/*
+*.pyc
