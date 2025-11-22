@@ -6,3 +6,4 @@ __pycache__/*
 *pycache*
 .specstory/*
 *.pyc
+google_auth.json
