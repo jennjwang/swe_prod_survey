@@ -41,7 +41,7 @@ def ai_tools_page():
         on_next=lambda: save_and_navigate('next', ai_experience=responses),
         back_key="ai_tools_back",
         next_key="ai_tools_next",
+        show_back=False,
         validation_fn=validate,
         validation_error="Please fill out all fields before proceeding."
     )
-

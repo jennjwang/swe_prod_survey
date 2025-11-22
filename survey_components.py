@@ -29,6 +29,7 @@ def navigation_buttons(
     back_key="back", 
     next_key="next",
     next_label="Next",
+    show_back: bool = True,
     validation_fn=None,
     validation_error="Please fill out all fields before proceeding."
 ):
@@ -48,7 +49,9 @@ def navigation_buttons(
     col1, col2, col3 = st.columns([1, 4, 1])
     
     with col1:
-        back_clicked = st.button("Back", key=back_key)
+        back_clicked = False
+        if show_back:
+            back_clicked = st.button("Back", key=back_key)
     with col3:
         next_clicked = st.button(next_label, key=next_key)
     
@@ -147,4 +150,3 @@ def text_input_question(
         key=key,
         placeholder=placeholder
     )
-
