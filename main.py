@@ -69,8 +69,8 @@ def main():
         # 2: developer_experience_page,      # Professional experience (REMOVED)
         3: ai_tools_page,                    # AI tools experience
         4: repository_assignment_page,       # Repository assignment
-        5: setup_checklist_page,             # Setup checklist and reminders
-        6: code_experience_page,             # Code experience questions
+        5: code_experience_page,             # Code experience questions
+        6: setup_checklist_page,             # Setup checklist and reminders
         7: pre_study_complete_page,          # Pre-study completion
 
         # Task section
