@@ -5,9 +5,7 @@ Organized into logical sections: pre-study, task, and post-PR.
 
 # Import from organized sections
 from .pre_study import (
-    consent_page,
     participant_id_page,
-    developer_experience_page,
     ai_tools_page,
     repository_assignment_page,
     setup_checklist_page,
@@ -36,9 +34,7 @@ from .post_exp1 import (
 
 __all__ = [
     # Pre-study pages
-    'consent_page',
     'participant_id_page',
-    'developer_experience_page',
     'ai_tools_page',
     'repository_assignment_page',
     'setup_checklist_page',

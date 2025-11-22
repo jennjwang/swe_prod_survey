@@ -8,7 +8,6 @@ import streamlit.components.v1 as components
 from styles import SURVEY_STYLES
 from pages import (
     # Pre-study pages
-    consent_page,
     participant_id_page,
     ai_tools_page,
     repository_assignment_page,
