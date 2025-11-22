@@ -57,7 +57,7 @@ def ai_condition_questions_page():
             Click the microphone button below to record your response. Your audio will be transcribed automatically.
             </p>
             """, unsafe_allow_html=True)
-        transcript = record_audio("ai_code_quality_description", min_duration=10, max_duration=300)
+        transcript = record_audio("ai_code_quality_description", min_duration=10, max_duration=600)
 
     with tab2:
         st.markdown("""

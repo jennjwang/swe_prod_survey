@@ -35,7 +35,7 @@ def ai_usage_page():
             Click the microphone button below to record your response. Your audio will be transcribed automatically.
             </p>
             """, unsafe_allow_html=True)
-        transcript_helpful = record_audio("ai_helpful_tasks", min_duration=10, max_duration=300)
+        transcript_helpful = record_audio("ai_helpful_tasks", min_duration=10, max_duration=600)
 
     with tab2:
         st.markdown("""
@@ -77,7 +77,7 @@ def ai_usage_page():
             Click the microphone button below to record your response. Your audio will be transcribed automatically.
             </p>
             """, unsafe_allow_html=True)
-        transcript_suggestions = record_audio("ai_suggestion_decisions", min_duration=10, max_duration=300)
+        transcript_suggestions = record_audio("ai_suggestion_decisions", min_duration=10, max_duration=600)
 
     with tab6:
         st.markdown("""
@@ -119,7 +119,7 @@ def ai_usage_page():
             Click the microphone button below to record your response. Your audio will be transcribed automatically.
             </p>
             """, unsafe_allow_html=True)
-        transcript_wish = record_audio("ai_wish_different", min_duration=10, max_duration=300)
+        transcript_wish = record_audio("ai_wish_different", min_duration=10, max_duration=600)
 
     with tab4:
         st.markdown("""

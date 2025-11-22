@@ -10,6 +10,7 @@ from survey_data import update_issue_time_estimate
 
 # Time estimation options
 TIME_ESTIMATION_OPTIONS = [
+    "Not selected",
     "<30 minutes",
     "30–60 minutes",
     "1–2 hours",
@@ -50,7 +51,7 @@ def time_estimation_page():
         </p>
         """, unsafe_allow_html=True)
     
-    # Set index based on previous response
+    # Set index based on previous response (default to "Not selected")
     if previous_estimation and previous_estimation in TIME_ESTIMATION_OPTIONS:
         default_index = TIME_ESTIMATION_OPTIONS.index(previous_estimation)
     else:
@@ -93,4 +94,3 @@ def time_estimation_page():
             st.rerun()
         else:
             st.error("Please select your time estimation to proceed.")
-

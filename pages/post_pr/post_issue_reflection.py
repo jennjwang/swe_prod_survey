@@ -66,7 +66,7 @@ def post_issue_reflection_page():
             Click the microphone button below to record your response. Your audio will be transcribed automatically.
             </p>
             """, unsafe_allow_html=True)
-        transcript1 = record_audio("ai_code_quality", min_duration=10, max_duration=300)
+        transcript1 = record_audio("ai_code_quality", min_duration=10, max_duration=600)
 
     with tab2:
         st.markdown("""
@@ -111,7 +111,7 @@ def post_issue_reflection_page():
             Click the microphone button below to record your response. Your audio will be transcribed automatically.
             </p>
             """, unsafe_allow_html=True)
-        transcript2 = record_audio("work_division", min_duration=10, max_duration=300)
+        transcript2 = record_audio("work_division", min_duration=10, max_duration=600)
 
     with tab4:
         st.markdown("""

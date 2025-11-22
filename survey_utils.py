@@ -37,7 +37,7 @@ def get_audio_duration(file):
         return None
 
 
-def record_audio(question_key, min_duration=20, max_duration=120):
+def record_audio(question_key, min_duration=10, max_duration=600):
     """
     Record and transcribe audio for a question.
     
@@ -127,4 +127,3 @@ def save_and_navigate(direction: str, **responses):
         next_page()
     elif direction == 'back':
         previous_page()
-
