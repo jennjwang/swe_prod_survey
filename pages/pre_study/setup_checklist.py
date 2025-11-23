@@ -13,6 +13,8 @@ def setup_checklist_page():
         "Before You Begin",
         "Please complete this checklist before starting your assigned issues."
     )
+    st.caption("If you run into any issues during setup, please contact jennjwang@stanford.edu.")
+
 
     # Display assigned repository for context
     assigned_repo = st.session_state['survey_responses'].get('assigned_repository', '')
@@ -35,12 +37,12 @@ def setup_checklist_page():
 
     # Checkbox 3
     check3 = st.checkbox("**3. Set Up Claude Code**", key="checklist_item_3")
-    st.markdown("Add your Anthropic API key to set up Claude Code locally.")
+    st.markdown("Add your Anthropic API key to .env file to set up Claude Code locally.")
     st.markdown("")
     
     # Checkbox 4
     check4 = st.checkbox("**4. Set Up SpecStory**", key="checklist_item_4")
-    st.markdown("Set up SpecStory in your virtual environment following the onboarding instructions.")
+    st.markdown("Set up SpecStory CLI in your virtual environment following the onboarding instructions.")
     st.markdown("")
     
     # Checkbox 5
@@ -51,8 +53,8 @@ def setup_checklist_page():
     # Checkbox 6
     check6 = st.checkbox("**6. AI Use Guidelines**", key="checklist_item_6")
     st.markdown("""
-        You will be allowed to use AI on certain issues, but please do not include any explicit
-        indicators of AI use in your code comments, commit messages, PR descriptions, and any other project documentation.
+        Run `pre-commit install --hook-type commit-msg` to set up git hooks to automatically check for AI indicators. You will be allowed to use AI on certain issues, but please do not include any explicit
+        indicators of AI use in your code comments, commit messages, PR descriptions, and any other project documentation. 
         """)
     st.markdown("")
 
