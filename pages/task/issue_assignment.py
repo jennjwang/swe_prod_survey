@@ -68,7 +68,7 @@ def issue_assignment_page():
 
     page_header(
         "Issue Assignment",
-        "You will be assigned issues to work on from your repository."
+        "You will be randomly assigned 4 issues to work on from your repository."
     )
 
     # Get participant info from session state
@@ -95,8 +95,7 @@ def issue_assignment_page():
             # First time - assign all 4 issues at once
             st.markdown("""
                 <p style='font-size:18px; margin-bottom: 1.5rem;'>
-                You will be assigned <strong>4 issues</strong> to complete during this study.
-                The issues and AI conditions have been randomly assigned. You're welcome to seek clarification and engage in discussion with the project maintainer just as you would in a 
+                You're welcome to seek clarification and engage in discussion with the project maintainer just as you would in a 
                 open-source development.
                 </p>
                 """, unsafe_allow_html=True)
