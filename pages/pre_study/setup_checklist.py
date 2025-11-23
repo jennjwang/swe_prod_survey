@@ -43,10 +43,10 @@ def setup_checklist_page():
     # Checkbox 4
     check4 = st.checkbox("**4. Set Up SpecStory**", key="checklist_item_4")
     st.markdown("""Set up SpecStory in your virtual environment following the onboarding instructions. 
-    The extension should come pre-installed from onboarding, but you will need to install the CLI to your virtual environment.""")
+    The SpecStory extension should come pre-installed from onboarding, but you will need to install the CLI to your virtual environment.""")
     st.markdown("""
     ```bash
-    zsh install_specstory_wrapper.sh
+    bash install_specstory_wrapper.sh
     ```
     """)
     st.markdown("")
