@@ -150,33 +150,21 @@ def issue_assignment_page():
                 st.markdown("""
                     <p style='font-size:16px; margin-bottom: 1rem;'>
                     Please go to the issue discussion and claim the issue by leaving a comment
-                    (e.g., "I'd like to work on this issue") and assign yourself to the issue. This follows standard open-source
+                    (e.g., "I'd like to work on this issue") and assigning yourself to the issue. 
+                    This follows standard open-source
                     contribution practices.
                     </p>
                     """, unsafe_allow_html=True)
 
                 # Checkbox to confirm they've claimed the issue
-                # Custom CSS for green checkbox
-                st.markdown("""
-                    <style>
-                    div[data-testid="stCheckbox"] input[type="checkbox"]:checked {
-                        background-color: #28a745 !important;
-                        border-color: #28a745 !important;
-                    }
-                    div[data-testid="stCheckbox"] input[type="checkbox"]:checked::after {
-                        color: white !important;
-                    }
-                    </style>
-                    """, unsafe_allow_html=True)
-
                 claimed_issue = st.checkbox(
-                    "I have claimed this issue in the discussion",
+                    "I have claimed this issue in the discussion and assigned myself to it",
                     key=f"claimed_issue_{issue_id}"
                 )
 
-                # Warning to not work on the issue yet
-                st.warning("⚠️ **Important:** Please do not work on the issue yet. You will be asked to estimate the time needed on the next page. Work on the issue only after completing the time estimation.")
-
+                # Warning to not work on the issue yet - only show if checkbox is checked
+                if claimed_issue:
+                    st.warning("⚠️ **Important:** Please do not work on the issue yet. You will be asked to estimate the time needed on the next page. Work on the issue only after completing the time estimation.")
 
                 # Navigation button
                 col1, col2, col3 = st.columns([1, 2, 1])
