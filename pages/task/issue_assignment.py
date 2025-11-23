@@ -127,7 +127,7 @@ def issue_assignment_page():
                     <strong>Your Next Issue:</strong>
                     </p>
                     """, unsafe_allow_html=True)
-
+                
                 if issue_url:
                     st.markdown(f"""
                         <p style='font-size:18px;'>
@@ -160,6 +160,10 @@ def issue_assignment_page():
                     "I have claimed this issue in the discussion",
                     key=f"claimed_issue_{issue_id}"
                 )
+
+                # Warning to not work on the issue yet
+                st.warning("⚠️ **Important:** Please do not work on the issue yet. You will be asked to estimate the time needed on the next page. Work on the issue only after completing the time estimation.")
+
 
                 # Navigation button
                 col1, col2, col3 = st.columns([1, 2, 1])
