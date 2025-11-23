@@ -43,7 +43,8 @@ def setup_checklist_page():
     # Checkbox 4
     check4 = st.checkbox("**4. Set Up SpecStory**", key="checklist_item_4")
     st.markdown("""Set up SpecStory in your virtual environment following the onboarding instructions. 
-    The extension should come pre-installed from onboarding, but you will need to install the CLI to your virtual environment.
+    The extension should come pre-installed from onboarding, but you will need to install the CLI to your virtual environment.""")
+    st.markdown("""
     ```bash
     zsh install_specstory_wrapper.sh
     ```
@@ -59,7 +60,7 @@ def setup_checklist_page():
     check6 = st.checkbox("**6. AI Use Guidelines**", key="checklist_item_6")
     st.markdown("""
         Run `pre-commit install --hook-type commit-msg` to set up git hooks to automatically check for AI indicators. 
-        You will be allowed to use AI on certain issues, but please avoid explicit AI references. 
+        You will be asked to use AI on specific issues, but please avoid explicit AI references. 
         """)
     st.markdown("")
 
