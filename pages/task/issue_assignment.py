@@ -140,10 +140,33 @@ def issue_assignment_page():
                     st.warning(f"Issue ID: {issue_id} (URL not available)")
                     print(f"DEBUG: Issue data: {issue}")
 
+                st.divider()
+
+                # Instructions to claim the issue
+                st.markdown("""
+                    <p style='font-size:18px; margin-top: 1rem; margin-bottom: 1rem;'>
+                    <strong>Before you start:</strong>
+                    </p>
+                    """, unsafe_allow_html=True)
+
+                st.markdown("""
+                    <p style='font-size:16px; margin-bottom: 1rem;'>
+                    Please go to the issue discussion and claim the issue by leaving a comment
+                    (e.g., "I'd like to work on this issue"). This follows standard open-source
+                    contribution practices.
+                    </p>
+                    """, unsafe_allow_html=True)
+
+                # Checkbox to confirm they've claimed the issue
+                claimed_issue = st.checkbox(
+                    "I have claimed this issue in the discussion",
+                    key=f"claimed_issue_{issue_id}"
+                )
+
                 # Navigation button
                 col1, col2, col3 = st.columns([1, 2, 1])
                 with col1:
-                    if st.button("Start This Issue", key="start_issue", type="primary", use_container_width=True):
+                    if st.button("Start This Issue", key="start_issue", type="primary", use_container_width=True, disabled=not claimed_issue):
                         # Save issue info to session state
                         st.session_state['survey_responses']['assigned_issue'] = issue
                         st.session_state['survey_responses']['issue_url'] = issue_url
