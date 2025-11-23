@@ -23,7 +23,7 @@ def time_estimation_page():
     """Display the time estimation question page."""
     page_header(
         "Time Estimation",
-        ""
+        "Before starting to work on this issue, please estimate how long you think it will take."
         )
     
     # Display assigned issue for context
@@ -47,7 +47,7 @@ def time_estimation_page():
     # Question
     st.markdown("""
         <p style='font-size:18px; font-weight:400; margin-bottom:1rem;'>
-        Before starting to work on this issue, how long do you think it will take you to complete it?
+        How long do you think it will take you to create a pull request for this issue?
         </p>
         """, unsafe_allow_html=True)
     

@@ -165,8 +165,9 @@ def issue_assignment_page():
                 # Warning to not work on the issue yet - only show if checkbox is checked
                 if claimed_issue:
                     st.warning("""
-                    ⚠️ **Important:** Please do not work on the issue yet. 
-                    You will be asked to a few questions about the issue on the next page. Work on the issue only after answering these questions.
+                    ⚠️ **Important:** Please do not work on the issue yet.
+                    On the next two pages, you will estimate the time needed to complete this issue and be assigned an AI condition.
+                    Only begin working after completing these steps.
                     """)
 
                 # Navigation button
