@@ -95,8 +95,7 @@ def issue_assignment_page():
             # First time - assign all 4 issues at once
             st.markdown("""
                 <p style='font-size:18px; margin-bottom: 1.5rem;'>
-                You're welcome to seek clarification and engage in discussion with the project maintainer just as you would in a 
-                open-source development.
+                We want this to feel like the open source development process, so please don’t hesitate to seek clarification and engage in discussion with the project maintainer.
                 </p>
                 """, unsafe_allow_html=True)
 
