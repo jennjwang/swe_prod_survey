@@ -4,8 +4,19 @@ Shows when participant returns after being assigned an issue.
 """
 
 import streamlit as st
+import re
 from survey_components import page_header
 from survey_data import mark_issue_completed, get_participant_progress
+
+
+def is_valid_pr_url(url):
+    """Validate that the URL is a GitHub pull request URL."""
+    if not url or not url.strip():
+        return False
+
+    # Pattern for GitHub PR URLs: https://github.com/owner/repo/pull/number
+    pattern = r'^https?://github\.com/[\w-]+/[\w.-]+/pull/\d+/?$'
+    return bool(re.match(pattern, url.strip()))
 
 
 def issue_completion_page():
@@ -36,7 +47,7 @@ def issue_completion_page():
         Please confirm that you have:
         - Implemented the required changes
         - Tested your solution
-        - Opened a pull request with your changes
+        - Opened a pull request to the swe-productivity fork with your changes
         """)
     
     # Store completion choice in session state to show/hide PR input
@@ -110,8 +121,11 @@ def issue_completion_page():
         if submit_button:
             # Basic validations
             if not pr_url or not pr_url.strip():
-                st.error("⚠️ Please enter a valid pull request URL.")
+                st.error("⚠️ Please enter a pull request URL.")
                 return
+            # if not is_valid_pr_url(pr_url):
+            #     st.error("⚠️ Please enter a valid GitHub pull request URL (e.g., https://github.com/owner/repo/pull/123)")
+            #     return
             if not issue_id:
                 st.error("⚠️ Issue ID not found. Please contact the study administrator.")
                 return
