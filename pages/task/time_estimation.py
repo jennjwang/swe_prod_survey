@@ -23,8 +23,8 @@ def time_estimation_page():
     """Display the time estimation question page."""
     page_header(
         "Time Estimation",
-        "Before starting to work on this issue, please estimate how long you think it will take."
-    )
+        ""
+        )
     
     # Display assigned issue for context
     issue_url = st.session_state['survey_responses'].get('issue_url', '')

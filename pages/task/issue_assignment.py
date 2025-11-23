@@ -164,7 +164,10 @@ def issue_assignment_page():
 
                 # Warning to not work on the issue yet - only show if checkbox is checked
                 if claimed_issue:
-                    st.warning("⚠️ **Important:** Please do not work on the issue yet. You will be asked to estimate the time needed on the next page. Work on the issue only after completing the time estimation.")
+                    st.warning("""
+                    ⚠️ **Important:** Please do not work on the issue yet. 
+                    You will be asked to a few questions about the issue on the next page. Work on the issue only after answering these questions.
+                    """)
 
                 # Navigation button
                 col1, col2, col3 = st.columns([1, 2, 1])
