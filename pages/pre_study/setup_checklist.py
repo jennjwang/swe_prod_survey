@@ -59,9 +59,15 @@ def setup_checklist_page():
     # Checkbox 6
     check6 = st.checkbox("**6. AI Use Guidelines**", key="checklist_item_6")
     st.markdown("""
-        Run `pre-commit install --hook-type pre-commit --hook-type commit-msg` to set up git hooks to automatically check for AI indicators. 
-        You will be asked to use AI on specific issues, but please avoid explicit AI references. 
+       You will be asked to use AI on specific issues, but please avoid explicit AI references. We provide git hooks to automatically check for AI indicators. 
+       Run the following command to set up the git hooks:
         """)
+    st.markdown("""
+    ```bash
+    pip install pre-commit
+    pre-commit install --hook-type pre-commit --hook-type commit-msg
+    ```
+    """)
     st.markdown("")
 
     st.divider()

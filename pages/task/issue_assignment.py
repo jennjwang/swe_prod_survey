@@ -96,7 +96,8 @@ def issue_assignment_page():
             st.markdown("""
                 <p style='font-size:18px; margin-bottom: 1.5rem;'>
                 You will be assigned <strong>4 issues</strong> to complete during this study.
-                The issues and AI conditions have been randomly assigned.
+                The issues and AI conditions have been randomly assigned. You're welcome to seek clarification and engage in discussion with the project maintainer just as you would in a 
+                open-source development.
                 </p>
                 """, unsafe_allow_html=True)
 
