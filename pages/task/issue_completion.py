@@ -105,7 +105,7 @@ def issue_completion_page():
             type="primary"
         )
 
-        st.markdown("<div style='margin-top: 4rem;'></div>", unsafe_allow_html=True)
+        # st.markdown("<div style='margin-top: 4rem;'></div>", unsafe_allow_html=True)
         
         if submit_button:
             # Basic validations
