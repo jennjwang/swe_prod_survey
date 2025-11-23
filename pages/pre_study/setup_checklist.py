@@ -13,8 +13,6 @@ def setup_checklist_page():
         "Before You Begin",
         "Please complete this checklist before starting your assigned issues."
     )
-    st.caption("If you run into any issues during setup, please contact jennjwang@stanford.edu.")
-
 
     # Display assigned repository for context
     assigned_repo = st.session_state['survey_responses'].get('assigned_repository', '')
@@ -65,12 +63,19 @@ def setup_checklist_page():
     st.markdown("""
     ```bash
     pip install pre-commit
-    pre-commit install --hook-type pre-commit --hook-type commit-msg
+    pre-commit install
     ```
     """)
     st.markdown("")
 
     st.divider()
+
+    st.markdown("""
+    <p style='font-size:16px; margin-bottom: 1rem;'>
+    If you run into any issues during setup, please contact jennjwang@stanford.edu.
+    </p>
+    """, unsafe_allow_html=True)
+    st.markdown("")
 
     # Check if all items are checked
     all_checked = check1 and check2 and check3 and check4 and check5 and check6
