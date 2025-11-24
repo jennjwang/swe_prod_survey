@@ -150,7 +150,7 @@ def issue_assignment_page():
                 st.markdown("""
                     <p style='font-size:16px; margin-bottom: 1rem;'>
                     Please go to the issue discussion and claim the issue by leaving a comment
-                    (e.g., "I'd like to work on this issue") and assigning yourself to the issue. 
+                    (e.g., "I'd like to work on this issue").
                     This follows standard open-source
                     contribution practices.
                     </p>
@@ -158,7 +158,7 @@ def issue_assignment_page():
 
                 # Checkbox to confirm they've claimed the issue
                 claimed_issue = st.checkbox(
-                    "I have claimed this issue in the discussion and assigned myself to it",
+                    "I have claimed this issue in the discussion",
                     key=f"claimed_issue_{issue_id}"
                 )
 
