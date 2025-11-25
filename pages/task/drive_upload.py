@@ -16,7 +16,7 @@ except Exception:
 
 
 SCOPES = ['https://www.googleapis.com/auth/drive']
-CHUNK_SIZE = 10 * 1024 * 1024  # 10 MB chunks for faster uploads
+CHUNK_SIZE = 100 * 1024 * 1024  # 100 MB chunks for faster uploads
 
 
 def _require_google_libs():
