@@ -1,4 +1,4 @@
-.streamlit/*
+.streamlit/secrets.toml
 deduplicated_tasks.csv
 updated_occupation_categories.csv
 survey.py
