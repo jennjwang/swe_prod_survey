@@ -16,6 +16,7 @@ except Exception:
 
 
 SCOPES = ['https://www.googleapis.com/auth/drive']
+CHUNK_SIZE = 10 * 1024 * 1024  # 10 MB chunks for faster uploads
 
 
 def _require_google_libs():
@@ -70,15 +71,26 @@ def upload_to_drive(file, folder_id: str, filename: str | None = None):
     mimetype = getattr(file, 'type', None) or 'application/octet-stream'
     name = sanitize_filename(filename or getattr(file, 'name', 'uploaded_file'))
 
-    media = MediaIoBaseUpload(io.BytesIO(file_bytes), mimetype=mimetype, resumable=False)
+    media = MediaIoBaseUpload(
+        io.BytesIO(file_bytes),
+        mimetype=mimetype,
+        resumable=True,
+        chunksize=CHUNK_SIZE
+    )
     body = {'name': name, 'parents': [folder_id]}
-    created = service.files().create(
+    request = service.files().create(
         body=body,
         media_body=media,
         fields='id, webViewLink',
         supportsAllDrives=True  # Required for shared drives
-    ).execute()
-    return created
+    )
+
+    # Execute upload with chunking
+    response = None
+    while response is None:
+        status, response = request.next_chunk()
+
+    return response
 
 
 def _get_or_create_folder(service, parent_id: str, name: str) -> str:
@@ -126,12 +138,23 @@ def upload_to_drive_in_subfolders(file, base_folder_id: str, subfolders: list[st
     mimetype = getattr(file, 'type', None) or 'application/octet-stream'
     name = sanitize_filename(filename or getattr(file, 'name', 'uploaded_file'))
 
-    media = MediaIoBaseUpload(io.BytesIO(file_bytes), mimetype=mimetype, resumable=False)
+    media = MediaIoBaseUpload(
+        io.BytesIO(file_bytes),
+        mimetype=mimetype,
+        resumable=True,
+        chunksize=CHUNK_SIZE
+    )
     body = {'name': name, 'parents': [parent_id]}
-    created = service.files().create(
+    request = service.files().create(
         body=body,
         media_body=media,
         fields='id, webViewLink',
         supportsAllDrives=True  # Required for shared drives
-    ).execute()
-    return created
+    )
+
+    # Execute upload with chunking
+    response = None
+    while response is None:
+        status, response = request.next_chunk()
+
+    return response
