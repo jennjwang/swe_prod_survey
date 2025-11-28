@@ -78,7 +78,7 @@ def issue_completion_page():
     if st.session_state.get('completion_choice') == 'completed':
         st.divider()
         st.subheader("Please submit your Pull Request URL")
-        st.write("Enter the URL of the pull request you opened for this issue:")
+        st.write("Create a pull request to the swe-productivity fork with your changes:")
         
         pr_url = st.text_input(
             label="Pull Request URL",
