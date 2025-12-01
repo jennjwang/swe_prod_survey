@@ -5,10 +5,22 @@ Shows important setup steps after repository assignment.
 
 import streamlit as st
 from survey_components import page_header
+from survey_data import get_participant_progress
 
 
 def setup_checklist_page():
     """Display setup checklist and important reminders."""
+    # Check if contributor has already started (has issue assigned)
+    participant_id = st.session_state['survey_responses'].get('participant_id')
+    if participant_id:
+        progress_result = get_participant_progress(participant_id)
+        if progress_result.get('success') and progress_result.get('progress'):
+            # If they already have an issue assigned, skip the checklist
+            if progress_result['progress'].get('issue_assigned'):
+                st.session_state['page'] += 1
+                st.rerun()
+                return
+
     page_header(
         "Before You Begin",
         "Please complete this checklist before starting your assigned issues."
@@ -82,11 +94,6 @@ def setup_checklist_page():
 
     # Navigation
     col1, col2, col3 = st.columns([1, 2, 1])
-
-    with col1:
-        if st.button("Back", key="checklist_back"):
-            st.session_state['page'] -= 1
-            st.rerun()
 
     with col3:
         if st.button("Continue", key="checklist_next", type="primary", disabled=not all_checked):
