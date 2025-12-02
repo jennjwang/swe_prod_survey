@@ -9,12 +9,27 @@ from survey_data import (
     assign_all_issues_to_participant,
     check_all_issues_assigned,
     get_next_issue_in_sequence,
-    request_different_issue
+    request_different_issue,
+    get_participant_progress
 )
 
 
 def issue_assignment_page():
     """Display the issue assignment page."""
+
+    participant_id = st.session_state['survey_responses'].get('participant_id', '')
+    if participant_id:
+        checklist_state = st.session_state['survey_responses'].get('checklist_completed')
+        if checklist_state is not True:
+            progress_result = get_participant_progress(participant_id)
+            if progress_result.get('success'):
+                progress = progress_result.get('progress', {})
+                checklist_done = progress.get('checklist_completed') is True
+                st.session_state['survey_responses']['checklist_completed'] = checklist_done
+                if not checklist_done:
+                    st.info("Please finish the setup checklist before continuing to your issue assignments.")
+                    st.session_state['page'] = 6  # setup checklist page
+                    st.rerun()
 
     # Check if we need to show AI condition acknowledgment
     if st.session_state.get('show_ai_condition', False):
@@ -72,7 +87,6 @@ def issue_assignment_page():
     )
 
     # Get participant info from session state
-    participant_id = st.session_state['survey_responses'].get('participant_id', '')
     assigned_repo = st.session_state['survey_responses'].get('assigned_repository', '')
     repo_url = st.session_state['survey_responses'].get('repository_url', '')
 
