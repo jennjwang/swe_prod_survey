@@ -214,6 +214,7 @@ def save_survey_responses(participant_id: str, responses: dict):
         'repository_url': responses.get('repository_url'),
         'forked_repository_url': responses.get('forked_repository_url'),
         'code_experience': responses.get('code_experience'),
+        'checklist_completed': responses.get('checklist_completed'),
     }
     
     # Flatten ai_experience dict
@@ -238,6 +239,55 @@ def save_survey_responses(participant_id: str, responses: dict):
     return {
         'success': True,
         'error': None
+    }
+
+
+@safe_db_operation()
+def mark_checklist_completed(participant_id: str):
+    """
+    Mark the setup checklist as completed for a participant in the pre-study table.
+
+    Args:
+        participant_id: The participant's ID
+
+    Returns:
+        dict with 'success' and 'error' keys
+    """
+    if not participant_id:
+        return {
+            'success': False,
+            'error': 'Participant ID is required to mark checklist completion'
+        }
+
+    update_data = {'checklist_completed': True}
+
+    # Try updating existing record first
+    update_result = supabase_client.table('pre-study')\
+        .update(update_data)\
+        .eq('participant_id', participant_id)\
+        .execute()
+
+    if update_result.data and len(update_result.data) > 0:
+        return {
+            'success': True,
+            'error': None
+        }
+
+    # If no record was updated, check if participant exists (update may succeed without returning data)
+    existing = supabase_client.table('pre-study')\
+        .select('participant_id')\
+        .eq('participant_id', participant_id)\
+        .execute()
+
+    if existing.data and len(existing.data) > 0:
+        return {
+            'success': True,
+            'error': None
+        }
+
+    return {
+        'success': False,
+        'error': 'Pre-study record not found for this participant.'
     }
 
 

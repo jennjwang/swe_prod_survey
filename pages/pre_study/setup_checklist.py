@@ -5,7 +5,7 @@ Shows important setup steps after repository assignment.
 
 import streamlit as st
 from survey_components import page_header
-from survey_data import get_participant_progress
+from survey_data import get_participant_progress, mark_checklist_completed
 
 
 def setup_checklist_page():
@@ -98,6 +98,18 @@ def setup_checklist_page():
     with col3:
         if st.button("Continue", key="checklist_next", type="primary", disabled=not all_checked):
             if all_checked:
+                participant_id = st.session_state['survey_responses'].get('participant_id')
+                if not participant_id:
+                    st.error("⚠️ Participant ID missing. Please go back and enter your email before continuing.")
+                    return
+
+                st.session_state['survey_responses']['checklist_completed'] = True
+                result = mark_checklist_completed(participant_id)
+                if not result['success']:
+                    st.error(f"⚠️ There was an error saving your checklist completion: {result['error']}")
+                    st.warning("Please contact the study administrator for assistance.")
+                    return
+
                 st.session_state['page'] += 1
                 st.rerun()
             else:
