@@ -53,12 +53,14 @@ def participant_id_page():
                     # Load pre-study data if it exists
                     if progress['pre_study_completed'] and progress['pre_study_data']:
                         pre_data = progress['pre_study_data']
+                        checklist_completed = pre_data.get('checklist_completed') is True
                         st.session_state['survey_responses'].update({
                             'professional_experience': pre_data.get('professional_experience'),
                             'assigned_repository': pre_data.get('assigned_repository'),
                             'repository_url': pre_data.get('repository_url'),
                             'forked_repository_url': pre_data.get('forked_repository_url'),
                             'code_experience': pre_data.get('code_experience'),
+                            'checklist_completed': checklist_completed,
                             'ai_experience': {
                                 'llm_hours': pre_data.get('ai_experience_llm_hours'),
                                 'agent_hours': pre_data.get('ai_agent_experience_hours'),
@@ -76,7 +78,13 @@ def participant_id_page():
                     print(f"DEBUG: issue_completed = {progress['issue_completed']}")
                     
                     # Route based on progress - CHECK PRE-STUDY FIRST
-                    if not progress['pre_study_completed']:
+                    checklist_completed = progress.get('checklist_completed', False)
+
+                    if progress['pre_study_completed'] and not checklist_completed:
+                        st.info("Please review the setup checklist before continuing.")
+                        st.session_state['page'] = 6  # Setup checklist page
+                        st.rerun()
+                    elif not progress['pre_study_completed']:
                         # Pre-study not completed, start from beginning (skip developer experience)
                         print("DEBUG: Pre-study not completed, starting from beginning")
                         st.session_state['page'] = 3  # AI tools page (page 3) - skip developer experience
@@ -140,4 +148,3 @@ def participant_id_page():
             else:
                 # ID is not valid, show error
                 st.error(f"{validation_result['error']}")
-

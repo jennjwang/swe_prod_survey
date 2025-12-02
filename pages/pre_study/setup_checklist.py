@@ -10,13 +10,14 @@ from survey_data import get_participant_progress, mark_checklist_completed
 
 def setup_checklist_page():
     """Display setup checklist and important reminders."""
-    # Check if contributor has already started (has issue assigned)
+    # Check participant progress so we can skip if the checklist is already completed
     participant_id = st.session_state['survey_responses'].get('participant_id')
     if participant_id:
         progress_result = get_participant_progress(participant_id)
         if progress_result.get('success') and progress_result.get('progress'):
-            # If they already have an issue assigned, skip the checklist
-            if progress_result['progress'].get('issue_assigned'):
+            progress_data = progress_result['progress']
+            # If checklist is already completed, skip the page
+            if progress_data.get('checklist_completed'):
                 st.session_state['page'] += 1
                 st.rerun()
                 return

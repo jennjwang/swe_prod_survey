@@ -319,11 +319,16 @@ def get_participant_progress(participant_id: str):
         issue_completed = is_completed_value is True
         survey_completed = survey_completed_value is True
     
+    checklist_completed = False
+    if pre_study.data and len(pre_study.data) > 0:
+        checklist_completed = pre_study.data[0].get('checklist_completed') is True
+
     progress = {
         'pre_study_completed': len(pre_study.data) > 0 if pre_study.data else False,
         'issue_assigned': len(issue.data) > 0 if issue.data else False,
         'issue_completed': issue_completed,
         'survey_completed': survey_completed,
+        'checklist_completed': checklist_completed,
         'pre_study_data': pre_study.data[0] if pre_study.data and len(pre_study.data) > 0 else None,
         'issue_data': issue.data[0] if issue.data and len(issue.data) > 0 else None
     }
