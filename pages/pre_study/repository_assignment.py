@@ -65,7 +65,7 @@ def repository_assignment_page():
             1. Go to <a href="{repo_url}" target="_blank" style="color: #0066cc;">{repo_url}</a>
             </p>
             <p style='font-size:18px; margin-bottom: 0.5rem'>
-            2. Create the fork of the repository above in your anonymous GitHub account
+            2. Create a fork of <b>the repository above</b> with your anonymous GitHub account
             </p>
             <p style='font-size:18px; margin-bottom: 1rem'>
             3. Copy and paste the URL of your forked repository below
