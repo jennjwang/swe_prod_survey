@@ -246,6 +246,7 @@ def save_survey_responses(participant_id: str, responses: dict):
 def mark_checklist_completed(participant_id: str):
     """
     Mark the setup checklist as completed for a participant in the pre-study table.
+    Uses upsert to create the record if it doesn't exist.
 
     Args:
         participant_id: The participant's ID
@@ -259,35 +260,19 @@ def mark_checklist_completed(participant_id: str):
             'error': 'Participant ID is required to mark checklist completion'
         }
 
-    update_data = {'checklist_completed': True}
+    upsert_data = {
+        'participant_id': participant_id,
+        'checklist_completed': True
+    }
 
-    # Try updating existing record first
-    update_result = supabase_client.table('pre-study')\
-        .update(update_data)\
-        .eq('participant_id', participant_id)\
+    # Use upsert to create or update the record
+    supabase_client.table('pre-study')\
+        .upsert(upsert_data, on_conflict='participant_id')\
         .execute()
-
-    if update_result.data and len(update_result.data) > 0:
-        return {
-            'success': True,
-            'error': None
-        }
-
-    # If no record was updated, check if participant exists (update may succeed without returning data)
-    existing = supabase_client.table('pre-study')\
-        .select('participant_id')\
-        .eq('participant_id', participant_id)\
-        .execute()
-
-    if existing.data and len(existing.data) > 0:
-        return {
-            'success': True,
-            'error': None
-        }
 
     return {
-        'success': False,
-        'error': 'Pre-study record not found for this participant.'
+        'success': True,
+        'error': None
     }
 
 
