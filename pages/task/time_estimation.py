@@ -23,7 +23,7 @@ def time_estimation_page():
     """Display the time estimation question page."""
     page_header(
         "Time Estimation",
-        "Before starting to work on this issue, please estimate how long you think it will take."
+        "Before starting to work on this issue, please estimate how long you think it will take, so we can get a sense of the issue difficulty."
         )
     
     # Display assigned issue for context
