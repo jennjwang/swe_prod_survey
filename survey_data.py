@@ -908,30 +908,38 @@ def save_ai_condition_responses(participant_id: str, issue_id: int, ai_speed_mul
 def check_pr_survey_completion(participant_id: str, issue_id: int):
     """
     Check if a participant has already completed PR survey responses for a specific issue.
-    Checks the post-PR table for existing responses.
-    
+    Checks repo-issues for survey_completed flag, using_ai, and post-PR for nasa_tlx_1.
+
     Args:
         participant_id: The participant's ID
         issue_id: The issue's ID
-        
+
     Returns:
-        dict with 'success', 'completed' (boolean), and 'error' keys
+        dict with 'success', 'completed', 'using_ai', 'nasa_tlx_1', and 'error' keys
     """
-    # Check if participant has a record in post-PR table for this specific issue
-    # Also verify that nasa_tlx_1 has a value (indicating survey was actually completed)
-    result = supabase_client.table('post-PR').select('participant_id, nasa_tlx_1').eq('participant_id', participant_id).eq('issue_id', int(issue_id)).execute()
-    
+    # Check actual survey completion status and AI condition from repo-issues table
+    repo_result = supabase_client.table('repo-issues').select('survey_completed, using_ai').eq('participant_id', participant_id).eq('issue_id', int(issue_id)).execute()
+
     completed = False
-    if result.data and len(result.data) > 0:
-        # Check that nasa_tlx_1 has a value (not null)
-        nasa_tlx_1_value = result.data[0].get('nasa_tlx_1')
-        completed = nasa_tlx_1_value is not None
-    
-    print(f"PR survey completion check for participant {participant_id}, issue {issue_id}: {completed}")
-    
+    using_ai = False
+    if repo_result.data and len(repo_result.data) > 0:
+        completed = repo_result.data[0].get('survey_completed') is True
+        using_ai = repo_result.data[0].get('using_ai') is True
+
+    # Also check nasa_tlx_1 from post-PR table for routing purposes
+    post_pr_result = supabase_client.table('post-PR').select('nasa_tlx_1').eq('participant_id', participant_id).eq('issue_id', int(issue_id)).execute()
+
+    nasa_tlx_1_value = None
+    if post_pr_result.data and len(post_pr_result.data) > 0:
+        nasa_tlx_1_value = post_pr_result.data[0].get('nasa_tlx_1')
+
+    print(f"PR survey completion check for participant {participant_id}, issue {issue_id}: completed={completed}, using_ai={using_ai}, nasa_tlx_1={nasa_tlx_1_value}")
+
     return {
         'success': True,
         'completed': completed,
+        'using_ai': using_ai,
+        'nasa_tlx_1': nasa_tlx_1_value,
         'error': None
     }
 
@@ -1189,6 +1197,54 @@ def assign_random_issue(participant_id: str, repository: str):
     return {
         'success': True,
         'issue': issue,
+        'error': None
+    }
+
+
+@safe_db_operation(error_defaults={'issue': None})
+def get_issue_needing_survey(participant_id: str):
+    """
+    Get an issue that is completed but hasn't had its survey finished yet.
+
+    Args:
+        participant_id: The participant's ID
+
+    Returns:
+        dict with 'success', 'issue' (issue data or None), 'using_ai', 'nasa_tlx_1', and 'error' keys
+    """
+    # Find issues where is_completed=True but survey_completed is not True
+    result = supabase_client.table('repo-issues')\
+        .select('*')\
+        .eq('participant_id', participant_id)\
+        .eq('is_completed', True)\
+        .execute()
+
+    if result.data:
+        for issue in result.data:
+            if issue.get('survey_completed') is not True:
+                issue_id = issue['issue_id']
+                using_ai = issue.get('using_ai') is True
+
+                # Check nasa_tlx_1 from post-PR table
+                post_pr_result = supabase_client.table('post-PR').select('nasa_tlx_1').eq('participant_id', participant_id).eq('issue_id', int(issue_id)).execute()
+                nasa_tlx_1 = None
+                if post_pr_result.data and len(post_pr_result.data) > 0:
+                    nasa_tlx_1 = post_pr_result.data[0].get('nasa_tlx_1')
+
+                print(f"Found issue needing survey: {issue_id}, using_ai={using_ai}, nasa_tlx_1={nasa_tlx_1}")
+                return {
+                    'success': True,
+                    'issue': issue,
+                    'using_ai': using_ai,
+                    'nasa_tlx_1': nasa_tlx_1,
+                    'error': None
+                }
+
+    return {
+        'success': True,
+        'issue': None,
+        'using_ai': False,
+        'nasa_tlx_1': None,
         'error': None
     }
 

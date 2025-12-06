@@ -24,13 +24,26 @@ def post_issue_questions_page():
     # Get participant info
     participant_id = st.session_state['survey_responses'].get('participant_id', '')
     issue_id = st.session_state['survey_responses'].get('issue_id', '')
-    
-    
+
+    # Check if this issue uses AI and if AI condition questions are completed
+    if participant_id and issue_id:
+        from survey_data import check_participant_ai_condition
+        ai_check = check_participant_ai_condition(participant_id, issue_id)
+        if ai_check['success'] and ai_check['using_ai']:
+            # AI user - check if they've completed AI condition questions
+            ai_code_quality_desc = st.session_state['survey_responses'].get('ai_code_quality_description', '')
+            if not ai_code_quality_desc or not ai_code_quality_desc.strip():
+                # Haven't completed AI condition questions, redirect back
+                print(f"DEBUG: AI user hasn't completed AI condition questions, redirecting to page 11")
+                st.session_state['page'] = 11  # ai_condition_questions_page
+                st.rerun()
+                return
+
     # Check if participant has already completed post-issue questions
     if participant_id and issue_id:
         from survey_data import check_pr_survey_completion
         completion_result = check_pr_survey_completion(participant_id, int(issue_id))
-        
+
         if completion_result['success'] and completion_result['completed']:
             # Already completed, redirect to already completed page
             st.session_state['page'] = 16  # Already completed page (completion_page)

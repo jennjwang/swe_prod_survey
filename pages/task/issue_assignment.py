@@ -18,6 +18,42 @@ def issue_assignment_page():
     """Display the issue assignment page."""
 
     participant_id = st.session_state['survey_responses'].get('participant_id', '')
+
+    # Check if participant has an issue that needs survey completion
+    # This prevents them from being assigned their next issue before finishing the survey
+    if participant_id:
+        from survey_data import get_issue_needing_survey
+        survey_check = get_issue_needing_survey(participant_id)
+
+        if survey_check['success'] and survey_check['issue']:
+            issue = survey_check['issue']
+            issue_id = issue['issue_id']
+            nasa_tlx_1 = survey_check.get('nasa_tlx_1')
+            using_ai = survey_check.get('using_ai', False)
+
+            # Restore issue info to session state
+            st.session_state['survey_responses']['issue_id'] = issue_id
+            st.session_state['survey_responses']['issue_url'] = issue.get('issue_url', '')
+            st.session_state['survey_responses']['current_issue_using_ai'] = using_ai
+
+            # Determine which page to route to
+            if nasa_tlx_1 is not None:
+                # NASA-TLX done, go to reflection page
+                print(f"DEBUG: Issue {issue_id} NASA-TLX answered, redirecting to page 13")
+                st.session_state['page'] = 13  # post_issue_reflection_page
+            else:
+                # Check if AI condition questions needed
+                ai_questions_done = st.session_state['survey_responses'].get('ai_code_quality_description', '').strip()
+
+                if using_ai and not ai_questions_done:
+                    print(f"DEBUG: Issue {issue_id} AI questions not done, redirecting to page 11")
+                    st.session_state['page'] = 11  # ai_condition_questions_page
+                else:
+                    print(f"DEBUG: Issue {issue_id} redirecting to page 12")
+                    st.session_state['page'] = 12  # post_issue_questions_page
+            st.rerun()
+            return
+
     if participant_id:
         checklist_state = st.session_state['survey_responses'].get('checklist_completed')
         if checklist_state is not True:
