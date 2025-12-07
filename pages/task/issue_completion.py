@@ -103,6 +103,7 @@ def issue_completion_page():
         st.markdown("")
         st.markdown("**2. Screen Recorder Data**")
         st.caption("Upload a zipped copy of the `/data` folder from your screen recorder directory.")
+        st.info("**Large files (>1GB):** If your recording is too large, please use [this Google Form](https://forms.gle/92Juk68xzjkC7vxg8) instead.")
         screenrec_upload = st.file_uploader(
             "Upload screen recorder /data folder (zipped)",
             type=['zip'],
@@ -129,36 +130,31 @@ def issue_completion_page():
             if not issue_id:
                 st.error("⚠️ Issue ID not found. Please contact the study administrator.")
                 return
-            # Enforce both uploads present
-            if not specstory_upload or not screenrec_upload:
-                st.error("⚠️ Please upload both the SpecStory zip and the screen recorder data zip before submitting.")
-                return
-
-            # Upload files to Drive as part of submission
+            # Upload files to Drive if provided
             try:
                 from .drive_upload import upload_to_drive_in_subfolders, sanitize_filename
                 folder_id = st.secrets.get('GDRIVE_FOLDER_ID', '')
-                if not folder_id:
-                    st.error("Drive folder not configured. Ask the admin to set GDRIVE_FOLDER_ID in secrets.")
-                    return
-                with st.spinner('Uploading your files...'):
-                    participant_folder = sanitize_filename(participant_id) if participant_id else "unknown_participant"
-                    issue_folder = f"issue_{issue_id}"
-                    subfolders = [participant_folder, issue_folder]
-                    # Upload SpecStory zip
-                    upload_to_drive_in_subfolders(
-                        specstory_upload,
-                        folder_id,
-                        subfolders=subfolders,
-                        filename=specstory_upload.name,
-                    )
-                    # Upload screen recorder zip
-                    upload_to_drive_in_subfolders(
-                        screenrec_upload,
-                        folder_id,
-                        subfolders=subfolders,
-                        filename=screenrec_upload.name,
-                    )
+                if folder_id and (specstory_upload or screenrec_upload):
+                    with st.spinner('Uploading your files...'):
+                        participant_folder = sanitize_filename(participant_id) if participant_id else "unknown_participant"
+                        issue_folder = f"issue_{issue_id}"
+                        subfolders = [participant_folder, issue_folder]
+                        # Upload SpecStory zip if provided
+                        if specstory_upload:
+                            upload_to_drive_in_subfolders(
+                                specstory_upload,
+                                folder_id,
+                                subfolders=subfolders,
+                                filename=specstory_upload.name,
+                            )
+                        # Upload screen recorder zip if provided
+                        if screenrec_upload:
+                            upload_to_drive_in_subfolders(
+                                screenrec_upload,
+                                folder_id,
+                                subfolders=subfolders,
+                                filename=screenrec_upload.name,
+                            )
             except Exception as e:
                 st.error(f"Upload failed: {e}")
                 return
@@ -168,7 +164,7 @@ def issue_completion_page():
                 result = mark_issue_completed(issue_id, pr_url.strip())
 
             if result['success']:
-                print(f"✅ Issue {issue_id} marked as completed with PR: {pr_url}")
+                print(f"Issue {issue_id} marked as completed with PR: {pr_url}")
 
                 # Save completion status to session state
                 st.session_state['survey_responses']['issue_completed'] = True
@@ -187,7 +183,7 @@ def issue_completion_page():
 
                 st.rerun()
             else:
-                st.error(f"⚠️ Error recording completion: {result['error']}")
+                st.error(f"Error recording completion: {result['error']}")
                 print(f"Failed to mark issue as completed: {result['error']}")
     
     # If user selected "not completed", show helpful message
