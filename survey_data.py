@@ -295,14 +295,14 @@ def get_participant_progress(participant_id: str):
     
     # Check if issue is completed
     issue_completed = False
-    survey_completed = False
+    checklist_completed = False
     if issue.data and len(issue.data) > 0:
         issue_data = issue.data[0]
         is_completed_value = issue_data.get('is_completed')
-        survey_completed_value = issue_data.get('survey_completed')
+        checklist_completed_value = issue_data.get('checklist_completed')
         # Only consider it completed if explicitly True
         issue_completed = is_completed_value is True
-        survey_completed = survey_completed_value is True
+        checklist_completed = checklist_completed_value is True
     
     checklist_completed = False
     if pre_study.data and len(pre_study.data) > 0:
@@ -312,7 +312,7 @@ def get_participant_progress(participant_id: str):
         'pre_study_completed': len(pre_study.data) > 0 if pre_study.data else False,
         'issue_assigned': len(issue.data) > 0 if issue.data else False,
         'issue_completed': issue_completed,
-        'survey_completed': survey_completed,
+        'checklist_completed': checklist_completed,
         'checklist_completed': checklist_completed,
         'pre_study_data': pre_study.data[0] if pre_study.data and len(pre_study.data) > 0 else None,
         'issue_data': issue.data[0] if issue.data and len(issue.data) > 0 else None
@@ -908,7 +908,7 @@ def save_ai_condition_responses(participant_id: str, issue_id: int, ai_speed_mul
 def check_pr_survey_completion(participant_id: str, issue_id: int):
     """
     Check if a participant has already completed PR survey responses for a specific issue.
-    Checks repo-issues for survey_completed flag, using_ai, and post-PR for nasa_tlx_1.
+    Checks repo-issues for checklist_completed flag, using_ai, and post-PR for nasa_tlx_1.
 
     Args:
         participant_id: The participant's ID
@@ -918,12 +918,12 @@ def check_pr_survey_completion(participant_id: str, issue_id: int):
         dict with 'success', 'completed', 'using_ai', 'nasa_tlx_1', and 'error' keys
     """
     # Check actual survey completion status and AI condition from repo-issues table
-    repo_result = supabase_client.table('repo-issues').select('survey_completed, using_ai').eq('participant_id', participant_id).eq('issue_id', int(issue_id)).execute()
+    repo_result = supabase_client.table('repo-issues').select('checklist_completed, using_ai').eq('participant_id', participant_id).eq('issue_id', int(issue_id)).execute()
 
     completed = False
     using_ai = False
     if repo_result.data and len(repo_result.data) > 0:
-        completed = repo_result.data[0].get('survey_completed') is True
+        completed = repo_result.data[0].get('checklist_completed') is True
         using_ai = repo_result.data[0].get('using_ai') is True
 
     # Also check nasa_tlx_1 from post-PR table for routing purposes
@@ -962,18 +962,18 @@ def save_pr_survey_completion_status(participant_id: str, issue_id: int, complet
     
     # Update the participant's assigned issue with survey completion status
     data = {
-        'survey_completed': completed
+        'checklist_completed': completed
     }
     
     # Add timestamp if completed
     if completed:
-        data['survey_completed_at'] = datetime.now(timezone.utc).isoformat()
+        data['checklist_completed_at'] = datetime.now(timezone.utc).isoformat()
     
     # Update by both participant_id and issue_id for precision
     result = supabase_client.table('repo-issues').update(data).eq('participant_id', (participant_id)).eq('issue_id', int(issue_id)).execute()
     
     if result.data and len(result.data) > 0:
-        print(f"✅ Updated repo-issues: survey_completed={completed} for participant {participant_id}, issue {issue_id}")
+        print(f"✅ Updated repo-issues: checklist_completed={completed} for participant {participant_id}, issue {issue_id}")
         return {
             'success': True,
             'error': None
@@ -1212,7 +1212,7 @@ def get_issue_needing_survey(participant_id: str):
     Returns:
         dict with 'success', 'issue' (issue data or None), 'using_ai', 'nasa_tlx_1', and 'error' keys
     """
-    # Find issues where is_completed=True but survey_completed is not True
+    # Find issues where is_completed=True but checklist_completed is not True
     result = supabase_client.table('repo-issues')\
         .select('*')\
         .eq('participant_id', participant_id)\
@@ -1221,7 +1221,7 @@ def get_issue_needing_survey(participant_id: str):
 
     if result.data:
         for issue in result.data:
-            if issue.get('survey_completed') is not True:
+            if issue.get('checklist_completed') is not True:
                 issue_id = issue['issue_id']
                 using_ai = issue.get('using_ai') is True
 

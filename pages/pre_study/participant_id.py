@@ -105,7 +105,7 @@ def participant_id_page():
                             next_issue = next_issue_result['issue']
                             has_time_estimate = next_issue.get('participant_estimate') is not None
                             is_completed = next_issue.get('is_completed', False)
-                            survey_completed = next_issue.get('survey_completed', False)
+                            checklist_completed_issue = next_issue.get('checklist_completed', False)
 
                             # Load next issue into session state
                             st.session_state['survey_responses'].update({
@@ -115,7 +115,7 @@ def participant_id_page():
                                 'current_issue_using_ai': next_issue.get('using_ai', False)
                             })
 
-                            if is_completed and not survey_completed:
+                            if is_completed and not checklist_completed_issue:
                                 # Issue completed but survey not done, go to post-issue questions
                                 print("DEBUG: Issue completed, survey pending, routing to post-issue questions")
                                 st.session_state['page'] = 11  # AI condition questions page
