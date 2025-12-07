@@ -29,6 +29,7 @@ def issue_assignment_page():
             issue = survey_check['issue']
             issue_id = issue['issue_id']
             nasa_tlx_1 = survey_check.get('nasa_tlx_1')
+            ai_code_quality = survey_check.get('ai_code_quality')
             using_ai = survey_check.get('using_ai', False)
 
             # Restore issue info to session state
@@ -36,21 +37,19 @@ def issue_assignment_page():
             st.session_state['survey_responses']['issue_url'] = issue.get('issue_url', '')
             st.session_state['survey_responses']['current_issue_using_ai'] = using_ai
 
-            # Determine which page to route to
-            if nasa_tlx_1 is not None:
-                # NASA-TLX done, go to reflection page
-                print(f"DEBUG: Issue {issue_id} NASA-TLX answered, redirecting to page 13")
-                st.session_state['page'] = 13  # post_issue_reflection_page
+            # Determine which page to route to based on what's completed
+            if nasa_tlx_1 is None:
+                # NASA-TLX not done yet, go there first
+                print(f"DEBUG: Issue {issue_id} NASA-TLX not done, redirecting to page 12")
+                st.session_state['page'] = 12  # post_issue_questions_page
+            elif using_ai and ai_code_quality is None:
+                # AI user hasn't done AI condition questions
+                print(f"DEBUG: Issue {issue_id} AI questions not done, redirecting to page 11")
+                st.session_state['page'] = 11  # ai_condition_questions_page
             else:
-                # Check if AI condition questions needed
-                ai_questions_done = st.session_state['survey_responses'].get('ai_code_quality_description', '').strip()
-
-                if using_ai and not ai_questions_done:
-                    print(f"DEBUG: Issue {issue_id} AI questions not done, redirecting to page 11")
-                    st.session_state['page'] = 11  # ai_condition_questions_page
-                else:
-                    print(f"DEBUG: Issue {issue_id} redirecting to page 12")
-                    st.session_state['page'] = 12  # post_issue_questions_page
+                # All done, go to reflection page
+                print(f"DEBUG: Issue {issue_id} survey done, redirecting to page 13")
+                st.session_state['page'] = 13  # post_issue_reflection_page
             st.rerun()
             return
 

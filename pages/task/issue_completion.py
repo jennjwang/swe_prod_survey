@@ -174,7 +174,7 @@ def issue_completion_page():
                 # Check if survey already completed
                 progress_result = get_participant_progress(participant_id)
 
-                if progress_result['success'] and progress_result['progress']['checklist_completed']:
+                if progress_result['success'] and progress_result['progress']['issue_survey_completed']:
                     # Survey already complete, go to completion page
                     st.session_state['page'] = 16
                 else:
