@@ -10,7 +10,8 @@ from survey_data import (
     check_all_issues_assigned,
     get_next_issue_in_sequence,
     request_different_issue,
-    get_participant_progress
+    get_participant_progress,
+    REQUIRED_ISSUE_COUNT
 )
 
 
@@ -116,9 +117,10 @@ def issue_assignment_page():
 
         return
 
+    issue_word = "issue" if REQUIRED_ISSUE_COUNT == 1 else "issues"
     page_header(
         "Issue Assignment",
-        "You will be randomly assigned 4 issues to work on from your repository."
+        f"You will be randomly assigned {REQUIRED_ISSUE_COUNT} {issue_word} to work on from your repository."
     )
 
     # Get participant info from session state
@@ -136,12 +138,12 @@ def issue_assignment_page():
 
     # st.divider()
 
-    # Check if participant already has all 4 issues assigned
+    # Check if participant already has the required issues assigned
     if participant_id:
         check_result = check_all_issues_assigned(participant_id)
 
         if check_result['success'] and not check_result['all_assigned']:
-            # First time - assign all 4 issues at once
+            # First time - assign the required issue(s)
             st.markdown("""
                 <p style='font-size:18px; margin-bottom: 1.5rem;'>
                 We want this to feel like the open source development process, so please don’t hesitate to seek clarification and engage in discussion with the project maintainer.
@@ -151,7 +153,7 @@ def issue_assignment_page():
             col1, col2 = st.columns([1, 2])
             with col1:
                 if st.button("Get My Assignments", key="assign_all", type="primary", use_container_width=True):
-                    with st.spinner('Assigning your issues...'):
+                    with st.spinner(f"Assigning your {issue_word}..."):
                         assign_result = assign_all_issues_to_participant(participant_id, assigned_repo)
 
         elif check_result['success'] and check_result['all_assigned']:
@@ -165,7 +167,8 @@ def issue_assignment_page():
                 total_completed = next_result['total_completed']
 
                 # Progress indicator
-                st.warning(f"**Progress:** {total_completed} of 4 issues completed")
+                completed_display = min(total_completed, REQUIRED_ISSUE_COUNT)
+                st.warning(f"**Progress:** {completed_display} of {REQUIRED_ISSUE_COUNT} {issue_word} completed")
 
                 # Show issue details
                 issue_url = issue.get('issue_url', '') or issue.get('url', '')
@@ -245,8 +248,8 @@ def issue_assignment_page():
                 st.caption("If you would like to request a different issue, please contact jennjwang@stanford.edu with a justification. We will facilitate the swap if it is well-justified.")
 
             elif next_result['success'] and next_result['issue'] is None:
-                # All issues complete
-                st.success("You have completed all your assigned issues!")
+                # All required issues complete
+                st.success("You have completed all required issues!")
                 st.markdown("""
                     <p style='font-size:18px; margin-top: 1rem;'>
                     Thank you for your participation. Please proceed to the final survey questions.

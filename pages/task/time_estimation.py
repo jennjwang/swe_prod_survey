@@ -78,7 +78,7 @@ def time_estimation_page():
             if issue_id:
                 result = update_issue_time_estimate(issue_id, time_estimation)
                 if result['success']:
-                    print(f"✅ Time estimate saved to database for issue {issue_id}")
+                    print(f"Time estimate saved to database for issue {issue_id}")
                 else:
                     print(f"⚠️ Failed to save time estimate: {result['error']}")
                     # Don't block progression if database save fails
