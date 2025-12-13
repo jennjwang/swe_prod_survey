@@ -115,7 +115,7 @@ def ai_condition_questions_page():
             result = save_to_database()
 
         if result['success']:
-            print(f"✅ AI condition responses saved for participant {participant_id}")
+            print(f"AI condition responses saved for participant {participant_id}")
             # Navigate to post-issue questions page
             st.session_state['page'] = 12  # post_issue_questions_page
             st.rerun()

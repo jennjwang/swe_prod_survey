@@ -10,10 +10,10 @@ def final_thank_you_page():
     """Display final thank you message after all survey questions are complete."""
     page_header(
         "Thank You for Completing the Study!",
-        "You have successfully completed all parts of the research study."
+        "You have successfully completed all parts of the study."
     )
 
-    st.success("All your responses have been recorded successfully!")
+    # st.success("All your responses have been recorded successfully!")
 
     # Closing message
     st.markdown("""
@@ -22,7 +22,7 @@ def final_thank_you_page():
             What happens next?
             </p>
             <p style='font-size:16px; margin-bottom: 1rem;'>
-            Your participation in this study is now complete. Thank you for your valuable contributions
+            Your participation in this study is now complete. Thank you for your contributions
             to our research on developer productivity and AI-assisted coding.
             </p>
             <p style='font-size:16px; margin-bottom: 1rem;'>
@@ -33,10 +33,10 @@ def final_thank_you_page():
         """, unsafe_allow_html=True)
 
     st.markdown("---")
-    st.markdown("""
-        <div style='text-align: center; padding: 1rem 0;'>
-            <p style='font-size:16px; color: #666;'>
-            Thank you again for your time and participation!
-            </p>
-        </div>
-        """, unsafe_allow_html=True)
+    # st.markdown("""
+    #     <div style='text-align: center; padding: 1rem 0;'>
+    #         <p style='font-size:16px; color: #666;'>
+    #         Thank you again for your time and participation!
+    #         </p>
+    #     </div>
+    #     """, unsafe_allow_html=True)

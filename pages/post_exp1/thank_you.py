@@ -10,7 +10,7 @@ def thank_you_page():
     """Display the final thank you page after survey completion."""
     page_header(
         "PR Implementation Complete!",
-        "Thank you for implementing the PRs for your assigned issues."
+        "Thank you for implementing PRs for all your assigned issues."
     )
     
 

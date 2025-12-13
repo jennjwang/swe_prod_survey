@@ -178,7 +178,7 @@ def post_issue_reflection_page():
             result = save_to_database()
 
         if result['success']:
-            print(f"✅ Post-issue reflection saved for participant {participant_id}")
+            print(f"Post-issue reflection saved for participant {participant_id}")
             # Mark survey as complete for AI users
             from survey_data import save_pr_survey_completion_status
             save_pr_survey_completion_status(participant_id, int(issue_id), True)

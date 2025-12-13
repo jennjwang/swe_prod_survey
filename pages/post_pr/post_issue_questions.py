@@ -170,7 +170,7 @@ def post_issue_questions_page():
             result = save_to_database()
         
         if result['success']:
-            print(f"✅ Post-issue responses saved for participant {participant_id}")
+            print(f"Post-issue responses saved for participant {participant_id}")
             # Save to session state
             st.session_state['survey_responses']['post_issue'] = all_responses
             return True

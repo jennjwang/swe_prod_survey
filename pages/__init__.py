@@ -42,6 +42,7 @@ from .post_exp1 import (
 
 from .post_exp2 import (
     end_of_study_thank_you_page,
+    code_activities_value_page,
     final_thank_you_page
 )
 
@@ -79,5 +80,6 @@ __all__ = [
 
     # Post-Exp2 pages
     'end_of_study_thank_you_page',
+    'code_activities_value_page',
     'final_thank_you_page',
 ]

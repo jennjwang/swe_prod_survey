@@ -200,7 +200,7 @@ def learning_outcomes_questions_page():
 
         if result['success']:
             participant_id = st.session_state['survey_responses'].get('participant_id', '')
-            print(f"✅ PR-closed responses saved for participant {participant_id}")
+            print(f"PR-closed responses saved for participant {participant_id}")
 
             # Clear session state for pr_closed responses
             st.session_state.pop('pr_closed_selected_issue', None)
@@ -210,7 +210,7 @@ def learning_outcomes_questions_page():
             st.session_state.pop('pr_closed_learning', None)
 
             # Show success message and redirect to PR closed thank you page
-            st.success("✅ Thank you! Your responses have been saved successfully.")
+            st.success("Thank you! Your responses have been saved successfully.")
             st.session_state['page'] = 23  # Redirect to PR closed thank you page
             st.rerun()
         else:
@@ -224,6 +224,7 @@ def learning_outcomes_questions_page():
         back_key="learn_back",
         next_key="learn_next",
         next_label="Submit",
+        show_back=False,
         validation_fn=validate,
         validation_error="Please answer all questions before proceeding."
     )

@@ -42,6 +42,7 @@ from pages import (
 
     # Post-Exp2 pages
     end_of_study_thank_you_page,
+    code_activities_value_page,
     final_thank_you_page
 )
 
@@ -109,11 +110,13 @@ def main():
         23: pr_closed_thank_you_page,        # PR closed thank you page
 
         # Post-Exp2 section
-        25: end_of_study_thank_you_page,     # End of study questions (AI responsibility + code activities)
+        25: end_of_study_thank_you_page,     # End of study questions (AI responsibility)
+        24: code_activities_value_page,      # Code activities value rating
         26: final_thank_you_page             # Final thank you after all questions
     }
     
     current_page = st.session_state.get('page', 0)
+
     page_function = page_routes.get(current_page, participant_id_page)
     page_function()
 

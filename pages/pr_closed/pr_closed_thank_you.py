@@ -38,7 +38,20 @@ def pr_closed_thank_you_page():
 
             # If all surveys are complete, route to end of study questions
             if total_issues > 0 and completed_count >= total_issues:
-                st.session_state['page'] = 25  # end_of_study_thank_you_page (merged questions)
+                # Check if post-study survey is already complete
+                existing = supabase_client.table('post-study')\
+                    .select('participant_id, ai_responsibility, value_reading_issue')\
+                    .eq('participant_id', participant_id)\
+                    .not_.is_('ai_responsibility', 'null')\
+                    .not_.is_('value_reading_issue', 'null')\
+                    .execute()
+
+                # If post-study already complete, go to final thank you (26)
+                # Otherwise, go to end of study survey (25)
+                if existing.data and len(existing.data) > 0:
+                    st.session_state['page'] = 26  # final_thank_you_page
+                else:
+                    st.session_state['page'] = 25  # end_of_study_thank_you_page
                 st.rerun()
                 return
 

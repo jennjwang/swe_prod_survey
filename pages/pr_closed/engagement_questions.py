@@ -178,7 +178,7 @@ def engagement_questions_page():
                 result = save_pr_closed_responses(participant_id, int(issue_id), db_responses)
 
             if result['success']:
-                print(f"✅ Engagement responses saved for participant {participant_id}")
+                print(f"Engagement responses saved for participant {participant_id}")
             else:
                 st.error(f"⚠️ Error saving responses: {result['error']}")
                 print(f"Failed to save engagement responses: {result['error']}")
@@ -194,6 +194,7 @@ def engagement_questions_page():
         back_key="engage_back",
         next_key="engage_next",
         next_label="Next",
+        show_back=False,
         validation_fn=validate,
         validation_error="Please answer all questions before proceeding."
     )

@@ -33,7 +33,7 @@ def update_issue_page():
     page_header(
         "Update Merged/Closed Pull Request",
         "Once your pull request has been <i>merged or closed</i>, please submit your data below. "
-        "These files should capture the changes you made to the codebase during the discussion with the reviewer."
+        "These files should capture your engagement with the reviewer, including reviewing their feedback and making changes to your code if needed."
     )
 
     # Get participant ID from session state
@@ -76,6 +76,41 @@ def update_issue_page():
         completed_issues = [issue for issue in all_completed_issues if issue.get('issue_id') not in completed_survey_issue_ids]
         print(f'completed_issues: {completed_issues}')
         print(f'completed_survey_issue_ids: {completed_survey_issue_ids}')
+
+        # Check if all PRs are closed and all pr_closed surveys are done
+        total_reviewed_prs = len(all_completed_issues)
+        total_completed_surveys = len(completed_survey_issue_ids)
+        all_pr_surveys_complete = total_reviewed_prs > 0 and total_completed_surveys >= total_reviewed_prs
+
+        print(f'DEBUG: Total reviewed PRs: {total_reviewed_prs}, Total completed surveys: {total_completed_surveys}, All surveys complete: {all_pr_surveys_complete}')
+
+        # If all PRs are closed and all pr_closed surveys are filled, route to end of study questions
+        if all_pr_surveys_complete:
+            print("DEBUG: All PRs closed and all pr_closed surveys complete, checking post-study status")
+            try:
+                post_study_result = supabase_client.table('post-study')\
+                    .select('participant_id, ai_responsibility, value_reading_issue')\
+                    .eq('participant_id', participant_id)\
+                    .not_.is_('ai_responsibility', 'null')\
+                    .not_.is_('value_reading_issue', 'null')\
+                    .execute()
+
+                # If post-study already complete, go to final thank you (26)
+                # Otherwise, go to end of study survey (25)
+                if post_study_result.data and len(post_study_result.data) > 0:
+                    print("DEBUG: Post-study complete, routing to final thank you")
+                    st.session_state['page'] = 26  # final_thank_you_page
+                else:
+                    print("DEBUG: Post-study not complete, routing to end of study survey")
+                    st.session_state['page'] = 25  # end_of_study_thank_you_page
+                st.rerun()
+                return
+            except Exception as e:
+                print(f"Error checking post-study status: {e}")
+                # On error, route to end of study survey
+                # st.session_state['page'] = 25
+                # st.rerun()
+                return
 
     except Exception as e:
         st.error(f"⚠️ Error fetching completed issues: {e}")
@@ -163,12 +198,12 @@ def update_issue_page():
     if submit_button:
         # Validate that at least one file is uploaded
         if not specstory_upload and not screenrec_upload:
-            st.error("⚠️ Please upload at least one file (SpecStory folder or Screen Recorder data).")
-            return
+            st.error("Please upload at least one file (SpecStory folder or Screen Recorder data).")
+            # return
 
         # Upload files to Drive
         try:
-            from .drive_upload import upload_to_drive_in_subfolders, sanitize_filename
+            from pages.task.drive_upload import upload_to_drive_in_subfolders, sanitize_filename
             folder_id = st.secrets.get('GDRIVE_FOLDER_ID', '')
 
             if not folder_id:
@@ -198,7 +233,7 @@ def update_issue_page():
                         filename=screenrec_upload.name,
                     )
 
-            st.success("✅ Files uploaded successfully!")
+            st.success("Files uploaded successfully!")
 
             # Store selected issue in session state for subsequent pages
             st.session_state['pr_closed_selected_issue'] = selected_pr
