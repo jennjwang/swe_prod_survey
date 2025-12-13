@@ -5,14 +5,15 @@ Reusable UI components for the survey.
 import streamlit as st
 
 
-def page_header(title: str, description: str):
+def page_header(title: str, description: str = None):
     """Display a consistent page header."""
     st.header(title)
-    st.markdown(f"""
-        <p style='font-size:18px; font-weight: 600; margin-bottom: 2rem'>
-        {description}
-        </p>
-        """, unsafe_allow_html=True)
+    if description:
+        st.markdown(f"""
+            <p style='font-size:18px; font-weight: 600; margin-bottom: 2rem'>
+            {description}
+            </p>
+            """, unsafe_allow_html=True)
 
 
 def question_label(text: str, font_size: int = 18, font_weight: int = 400):
