@@ -31,7 +31,18 @@ from pages import (
 
     # Completion pages
     completion_page,
-    thank_you_page
+    thank_you_page,
+
+    # PR closed pages
+    update_issue_page,
+    collaboration_questions_page,
+    engagement_questions_page,
+    learning_outcomes_questions_page,
+    pr_closed_thank_you_page,
+
+    # Post-Exp2 pages
+    end_of_study_thank_you_page,
+    final_thank_you_page
 )
 
 
@@ -88,7 +99,18 @@ def main():
 
         # Completion section
         16: completion_page,                 # Single issue completion
-        17: thank_you_page                   # Final thank you (all issues complete)
+        17: thank_you_page,                  # Final thank you (all issues complete)
+
+        # PR closed section
+        18: update_issue_page,               # Update previously closed issues
+        19: collaboration_questions_page,    # Collaboration questions (includes collaboration factors)
+        20: engagement_questions_page,       # Engagement questions
+        22: learning_outcomes_questions_page,# Learning outcomes questions
+        23: pr_closed_thank_you_page,        # PR closed thank you page
+
+        # Post-Exp2 section
+        25: end_of_study_thank_you_page,     # End of study questions (AI responsibility + code activities)
+        26: final_thank_you_page             # Final thank you after all questions
     }
     
     current_page = st.session_state.get('page', 0)
@@ -98,4 +120,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

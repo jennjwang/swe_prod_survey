@@ -96,10 +96,51 @@ def participant_id_page():
                         next_issue_result = get_next_issue_in_sequence(participant_id)
 
                         if next_issue_result['success'] and next_issue_result['issue'] is None:
-                            # All 4 issues completed, go to final completion
-                            print("DEBUG: All 4 issues completed, routing to final completion")
-                            st.session_state['page'] = 17  # Thank you page (all issues complete)
-                            st.rerun()
+                            # All 4 issues completed, check if there are reviewed PRs needing updates
+                            print("DEBUG: All 4 issues completed, checking for reviewed PRs")
+
+                            # Check if there are any reviewed PRs that need updating
+                            from survey_data import get_supabase_client
+                            supabase_client = get_supabase_client()
+
+                            try:
+                                # Check for reviewed PRs (is_reviewed = True)
+                                reviewed_result = supabase_client.table('repo-issues')\
+                                    .select('issue_id')\
+                                    .eq('participant_id', participant_id)\
+                                    .eq('is_reviewed', True)\
+                                    .execute()
+
+                                # Check for completed PR surveys (learn_4 is not null)
+                                pr_closed_result = supabase_client.table('pr-closed')\
+                                    .select('issue_id, learn_4')\
+                                    .eq('participant_id', participant_id)\
+                                    .not_.is_('learn_4', 'null')\
+                                    .execute()
+
+                                reviewed_issue_ids = {item['issue_id'] for item in reviewed_result.data} if reviewed_result.data else set()
+                                completed_survey_ids = {int(item['issue_id']) for item in pr_closed_result.data} if pr_closed_result.data else set()
+
+                                # Check if there are reviewed PRs that haven't had surveys completed
+                                has_pending_pr_surveys = len(reviewed_issue_ids - completed_survey_ids) > 0
+
+                                print(f"DEBUG: Reviewed PRs: {reviewed_issue_ids}, Completed surveys: {completed_survey_ids}")
+
+                                if has_pending_pr_surveys:
+                                    # Has reviewed PRs needing updates, route to update page
+                                    print("DEBUG: Has reviewed PRs needing updates, routing to update page")
+                                    st.session_state['page'] = 18  # Update issue page
+                                    st.rerun()
+                                else:
+                                    # All surveys complete or no reviewed PRs yet, go to thank you page
+                                    print("DEBUG: All surveys complete or no reviewed PRs, routing to thank you")
+                                    st.session_state['page'] = 17  # Thank you page (all issues complete)
+                                    st.rerun()
+                            except Exception as e:
+                                print(f"Error checking for reviewed PRs: {e}")
+                                # On error, default to thank you page
+                                st.session_state['page'] = 17
+                                st.rerun()
                         elif next_issue_result['success'] and next_issue_result['issue']:
                             # Has incomplete issues
                             next_issue = next_issue_result['issue']

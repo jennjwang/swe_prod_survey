@@ -21,7 +21,7 @@ def is_valid_pr_url(url):
 
 def issue_completion_page():
     """Ask participant if they have completed their assigned issue."""
-    page_header("Issue Status", "Let's check on your assigned issue.")
+    page_header("Issue Status", "Let's check on your currently assigned issue.")
 
     # Get issue details from session state
     participant_id = st.session_state['survey_responses'].get('participant_id', '')
@@ -73,6 +73,7 @@ def issue_completion_page():
             use_container_width=True
         ):
             st.session_state['completion_choice'] = 'not_completed'
+        
     
     # If user selected "completed", show PR URL input and optional file uploads
     if st.session_state.get('completion_choice') == 'completed':
@@ -116,6 +117,7 @@ def issue_completion_page():
             key="submit_completion",
             type="primary"
         )
+
 
         # st.markdown("<div style='margin-top: 4rem;'></div>", unsafe_allow_html=True)
         
@@ -188,17 +190,79 @@ def issue_completion_page():
     
     # If user selected "not completed", show helpful message
     if st.session_state.get('completion_choice') == 'not_completed':
-        st.divider()
+        # st.divider()
+        st.markdown("""
+            <div style='margin-top: 2rem;'>
+            </div>
+            """, unsafe_allow_html=True)
         st.info("""
-            No problem! Please continue working on your issue.
-
-            When you complete it and open a pull request, return to this page to submit your completion.
+            No problem! Please continue working on your issue. When you complete it and open a pull request, return to this page to submit your completion.
         """)
 
-        st.markdown("<div style='margin-top: 4rem;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='margin-top: 2rem;'></div>", unsafe_allow_html=True)
 
         # if st.button("Got it", key="clear_not_completed"):
         #     st.session_state['completion_choice'] = None
         #     st.rerun()
 
         # st.caption("💡 You can refresh this page anytime to check back or submit your completion.")
+
+    st.divider()
+
+    st.subheader("Check on previous PRs")
+
+    st.markdown("Once you have completed a PR, you can enter its URL to check its AI condition:")
+
+    check_issue_url = st.text_input(
+        label="PR URL to check",
+        placeholder="https://github.com/owner/repo/pull/123",
+        key="check_issue_url",
+        label_visibility="collapsed"
+    )
+
+    if st.button("Check conditions", key="check_issue_button"):
+        if not check_issue_url or not check_issue_url.strip():
+            st.error("Please enter a PR URL.")
+        else:
+            # Query database for this issue URL
+            from survey_data import supabase_client
+
+            with st.spinner('Checking PR...'):
+                result = supabase_client.table('repo-issues')\
+                    .select('using_ai, issue_url, pr_url, issue_id')\
+                    .eq('pr_url', check_issue_url.strip())\
+                    .execute()
+
+                if result.data and len(result.data) > 0:
+                    issue_data = result.data[0]
+                    using_ai = issue_data.get('using_ai')
+                    issue_url = issue_data.get('issue_url')
+                    pr_url = issue_data.get('pr_url')
+                    
+                    st.markdown("<div style='margin-top: 1rem;'></div>", unsafe_allow_html=True)
+                    # st.success(f"PR found: {check_issue_url}")
+                    if issue_url:
+                        # Extract the last digit from the issue URL
+                        last_digit = pr_url.rstrip('/').split('/')[-1]
+                        st.info(f"**Associated Issue:** {issue_url}")
+                    if using_ai is True:
+                        st.warning("**AI Condition:** You MAY use AI tools for this issue.")
+                    elif using_ai is False:
+                        st.warning("**AI Condition:** You should NOT use AI tools for this issue.")
+                    st.write("Please use this command for recording data during code review:")
+                    st.code(f"swe-prod-recorder --pr {last_digit}", language="bash")
+
+                else:
+                    st.error(f"PR URL not found in the database. Please check the URL and try again.")
+
+    st.markdown("<div style='margin-top: 2rem;'></div>", unsafe_allow_html=True)
+    st.divider()
+
+    st.subheader("Update a merged/closed PR")
+    st.markdown("""
+    If you have discussed your pull request with reviewers and it has been **merged or closed**,
+    you can update the status of a previous PR here and submit your screen recorder data.
+    """)
+    if st.button("Update PR"):
+        st.session_state['page'] = 18  # PR closed update page
+        st.rerun()

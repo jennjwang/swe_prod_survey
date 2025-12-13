@@ -26,10 +26,23 @@ from .post_pr import (
     completion_page
 )
 
+from .pr_closed import (
+    update_issue_page,
+    collaboration_questions_page,
+    engagement_questions_page,
+    learning_outcomes_questions_page,
+    pr_closed_thank_you_page
+)
+
 from .post_exp1 import (
     study_val_page,
     ai_usage_page,
     thank_you_page
+)
+
+from .post_exp2 import (
+    end_of_study_thank_you_page,
+    final_thank_you_page
 )
 
 __all__ = [
@@ -53,7 +66,18 @@ __all__ = [
     'completion_page',
     'thank_you_page',
 
+    # PR closed pages
+    'update_issue_page',
+    'collaboration_questions_page',
+    'engagement_questions_page',
+    'learning_outcomes_questions_page',
+    'pr_closed_thank_you_page',
+
     # Post-Exp1 pages
     'study_val_page',
     'ai_usage_page',
+
+    # Post-Exp2 pages
+    'end_of_study_thank_you_page',
+    'final_thank_you_page',
 ]

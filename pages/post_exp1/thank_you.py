@@ -9,8 +9,8 @@ from survey_components import page_header
 def thank_you_page():
     """Display the final thank you page after survey completion."""
     page_header(
-        "Survey Completed!",
-        "Thank you for participating in our research study."
+        "PR Implementation Complete!",
+        "Thank you for implementing the PRs for your assigned issues."
     )
     
 
@@ -44,8 +44,11 @@ def thank_you_page():
             What happens next?
             </p>
             <p style='font-size:16px; margin-bottom: 1rem;'>
-            Your responses have been recorded, and reviewers will begin reviewing your PRs. 
+            Your responses have been recorded, and reviewers will begin reviewing your PRs.
             You should receive a notification once your PRs are reviewed.
+            </p>
+            <p style='font-size:16px; margin-bottom: 1rem;'>
+            Once your PRs have been <strong>merged or closed</strong>, please return to submit your final data and complete the post-review survey.
             </p>
             <p style='font-size:16px; margin-bottom: 1rem;'>
             If you have any questions or concerns,
@@ -53,6 +56,13 @@ def thank_you_page():
             </p>
         </div>
         """, unsafe_allow_html=True)
+
+    st.markdown("<div style='margin-top: 2rem;'></div>", unsafe_allow_html=True)
+
+    # Add button to update merged/closed PRs
+    if st.button("Update Merged/Closed PR", type="primary", use_container_width=True):
+        st.session_state['page'] = 18  # PR closed update page
+        st.rerun()
 
     # Optional: View all responses (for transparency)
     # with st.expander("View your survey responses"):
