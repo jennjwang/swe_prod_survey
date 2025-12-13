@@ -114,7 +114,7 @@ def participant_id_page():
                                 reviewed_result = supabase_client.table('repo-issues')\
                                     .select('issue_id')\
                                     .eq('participant_id', participant_id)\
-                                    .eq('is_reviewed', True)\
+                                    .or_('is_merged.eq.true,is_closed.eq.true')\
                                     .execute()
 
                                 # Check for completed PR surveys (learn_4 is not null)

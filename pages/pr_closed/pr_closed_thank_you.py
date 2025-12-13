@@ -20,10 +20,8 @@ def pr_closed_thank_you_page():
             assigned_issues = supabase_client.table('repo-issues')\
                 .select('issue_id')\
                 .eq('participant_id', participant_id)\
-                .eq('is_reviewed', True)\
+                .or_('is_merged.eq.true,is_closed.eq.true')\
                 .execute()
-
-            #    .or_('is_merged.eq.true,is_closed.eq.true')\
             
             total_issues = len(assigned_issues.data) if assigned_issues.data else 0
 

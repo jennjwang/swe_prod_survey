@@ -57,10 +57,8 @@ def update_issue_page():
         result = supabase_client.table('repo-issues')\
             .select('*')\
             .eq('participant_id', participant_id)\
-            .eq('is_reviewed', True)\
+            .or_('is_merged.eq.true,is_closed.eq.true')\
             .execute()
-
-        # .or_('is_merged.eq.true,is_closed.eq.true')\
 
         all_completed_issues = result.data if result.data else []
 
