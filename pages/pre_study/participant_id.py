@@ -5,7 +5,12 @@ Participant ID page for the survey.
 import streamlit as st
 from survey_components import page_header, text_input_question
 from survey_utils import save_and_navigate, next_page
-from survey_data import validate_participant_id, get_participant_progress, get_repository_assignment
+from survey_data import (
+    validate_participant_id,
+    get_participant_progress,
+    get_repository_assignment,
+    REQUIRED_ISSUE_COUNT
+)
 
 
 def participant_id_page():
@@ -91,13 +96,14 @@ def participant_id_page():
                         st.rerun()
                     elif progress['issue_assigned']:
                         # Pre-study completed and issue assigned
-                        # Check if all 4 issues are completed by getting next issue
+                        # Check if all required issues are completed by getting next issue
+                        print(f"DEBUG: Checking completion status for {REQUIRED_ISSUE_COUNT} required issue(s)")
                         from survey_data import get_next_issue_in_sequence
                         next_issue_result = get_next_issue_in_sequence(participant_id)
 
                         if next_issue_result['success'] and next_issue_result['issue'] is None:
-                            # All 4 issues completed, check if there are reviewed PRs needing updates
-                            print("DEBUG: All 4 issues completed, checking for reviewed PRs")
+                            # All required issues completed, check if there are reviewed PRs needing updates
+                            print("DEBUG: All required issues completed, checking for reviewed PRs")
 
                             # Check if there are any reviewed PRs that need updating
                             from survey_data import get_supabase_client
@@ -123,14 +129,43 @@ def participant_id_page():
 
                                 # Check if there are reviewed PRs that haven't had surveys completed
                                 has_pending_pr_surveys = len(reviewed_issue_ids - completed_survey_ids) > 0
+                                total_reviewed_prs = len(reviewed_issue_ids)
+                                all_pr_surveys_complete = total_reviewed_prs > 0 and len(completed_survey_ids) >= total_reviewed_prs
 
                                 print(f"DEBUG: Reviewed PRs: {reviewed_issue_ids}, Completed surveys: {completed_survey_ids}")
+                                print(f"DEBUG: Total reviewed PRs: {total_reviewed_prs}, All surveys complete: {all_pr_surveys_complete}")
 
                                 if has_pending_pr_surveys:
                                     # Has reviewed PRs needing updates, route to update page
                                     print("DEBUG: Has reviewed PRs needing updates, routing to update page")
                                     st.session_state['page'] = 18  # Update issue page
                                     st.rerun()
+                                elif all_pr_surveys_complete:
+                                    # All PRs are closed and all pr_closed surveys are filled
+                                    # Check if post-study survey is already complete
+                                    print("DEBUG: All PRs closed and all pr_closed surveys complete, checking post-study status")
+                                    try:
+                                        post_study_result = supabase_client.table('post-study')\
+                                            .select('participant_id, ai_responsibility, value_reading_issue')\
+                                            .eq('participant_id', participant_id)\
+                                            .not_.is_('ai_responsibility', 'null')\
+                                            .not_.is_('value_reading_issue', 'null')\
+                                            .execute()
+
+                                        # If post-study already complete, go to final thank you (26)
+                                        # Otherwise, go to end of study survey (25)
+                                        if post_study_result.data and len(post_study_result.data) > 0:
+                                            print("DEBUG: Post-study complete, routing to final thank you")
+                                            st.session_state['page'] = 26  # final_thank_you_page
+                                        else:
+                                            print("DEBUG: Post-study not complete, routing to end of study survey")
+                                            st.session_state['page'] = 25  # end_of_study_thank_you_page
+                                        st.rerun()
+                                    except Exception as e:
+                                        print(f"Error checking post-study status: {e}")
+                                        # On error, route to end of study survey
+                                        st.session_state['page'] = 25
+                                        st.rerun()
                                 else:
                                     # All surveys complete or no reviewed PRs yet, go to thank you page
                                     print("DEBUG: All surveys complete or no reviewed PRs, routing to thank you")
@@ -178,7 +213,7 @@ def participant_id_page():
                             st.rerun()
                     else:
                         # Pre-study completed but no issue assigned, go to issue assignment page
-                        st.info("✅ Welcome back! You've already completed the pre-study survey.")
+                        st.info("Welcome back! You've already completed the pre-study survey.")
                         print("DEBUG: Routing to issue assignment page (no issue assigned yet)")
                         st.session_state['page'] = 8  # Issue assignment page
                         st.rerun()
