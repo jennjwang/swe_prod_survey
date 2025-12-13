@@ -27,6 +27,9 @@ def get_supabase_client():
 
 supabase_client = get_supabase_client()
 
+# Number of issues/PRs each participant is required to complete.
+REQUIRED_ISSUE_COUNT = 4
+
 
 def extract_repo_name(repo_string: str) -> str:
     """
@@ -391,27 +394,15 @@ def assign_issue_to_participant(participant_id: str, issue_id: int):
     """
     print(f"=== STARTING ISSUE ASSIGNMENT ===")
 
-    # Check how many issues this participant has and their AI conditions
+    # Check how many issues this participant already has
     existing_issues = supabase_client.table('repo-issues').select('using_ai').eq('participant_id', participant_id).execute()
-
-    ai_count = sum(1 for issue in (existing_issues.data or []) if issue.get('using_ai') is True)
-    no_ai_count = sum(1 for issue in (existing_issues.data or []) if issue.get('using_ai') is False)
     total_count = len(existing_issues.data) if existing_issues.data else 0
 
-    print(f"Participant {participant_id} current issues: {total_count} total, {ai_count} with AI, {no_ai_count} without AI")
+    print(f"Participant {participant_id} currently has {total_count} assigned issues")
 
-    # Determine AI condition for this issue
-    # Target: 2 with AI, 2 without AI (4 total)
+    # Determine AI condition for this issue (single-issue requirement: random per issue)
     import random
-    if ai_count >= 2:
-        # Already has 2 with AI, must assign without AI
-        using_ai = False
-    elif no_ai_count >= 2:
-        # Already has 2 without AI, must assign with AI
-        using_ai = True
-    else:
-        # Can go either way, randomly assign
-        using_ai = random.choice([True, False])
+    using_ai = random.choice([True, False])
 
     print(f"Assigning issue with using_ai = {using_ai}")
 
@@ -433,7 +424,7 @@ def assign_issue_to_participant(participant_id: str, issue_id: int):
     print(f"Update result: {result}")
     
     if result.data and len(result.data) > 0:
-        print(f"✅ Successfully assigned issue {issue_id} to participant {participant_id}")
+        print(f"Successfully assigned issue {issue_id} to participant {participant_id}")
         print(f"Updated row: {result.data[0]}")
         return {
             'success': True,
@@ -456,7 +447,7 @@ def assign_issue_to_participant(participant_id: str, issue_id: int):
 @safe_db_operation()
 def assign_all_issues_to_participant(participant_id: str, repository: str):
     """
-    Assign all 4 issues to a participant at once with randomized order and AI conditions.
+    Assign the required number of issues to a participant with randomized order and AI conditions.
 
     Args:
         participant_id: The participant's ID
@@ -465,20 +456,23 @@ def assign_all_issues_to_participant(participant_id: str, repository: str):
     Returns:
         dict with 'success', 'error', and 'issues' keys
     """
-    print(f"=== ASSIGNING ALL 4 ISSUES TO PARTICIPANT ===")
+    print(f"=== ASSIGNING {REQUIRED_ISSUE_COUNT} ISSUE(S) TO PARTICIPANT ===")
     print(f"Participant: {participant_id}")
     print(f"Repository: {repository}")
 
-    # Get 4 random unassigned issues from the repository
+    # Get required number of unassigned issues from the repository
     result = supabase_client.table('repo-issues')\
         .select('*')\
         .eq('repository', repository)\
         .eq('is_assigned', False)\
-        .limit(4)\
+        .limit(REQUIRED_ISSUE_COUNT)\
         .execute()
 
-    if not result.data or len(result.data) < 4:
-        error_msg = f"Not enough unassigned issues available. Found {len(result.data) if result.data else 0}, need 4."
+    if not result.data or len(result.data) < REQUIRED_ISSUE_COUNT:
+        error_msg = (
+            f"Not enough unassigned issues available. "
+            f"Found {len(result.data) if result.data else 0}, need {REQUIRED_ISSUE_COUNT}."
+        )
         print(f"⚠️ {error_msg}")
         return {
             'success': False,
@@ -493,17 +487,34 @@ def assign_all_issues_to_participant(participant_id: str, repository: str):
     import random
     random.shuffle(issues)
 
-    # Randomly assign AI conditions (2 with AI, 2 without)
-    ai_conditions = [True, True, False, False]
+    # Create AI condition assignments: ensure at least 2 True and at least 2 False
+    # For REQUIRED_ISSUE_COUNT = 4, we'll have exactly 2 True and 2 False
+    ai_conditions = []
+    
+    # Ensure at least 2 True and at least 2 False
+    ai_conditions.extend([True] * 2)
+    ai_conditions.extend([False] * 2)
+    
+    # If we need more than 4 issues, balance the remainder
+    remaining = REQUIRED_ISSUE_COUNT - 4
+    if remaining > 0:
+        # For remaining issues, alternate or balance
+        half_remaining = remaining // 2
+        ai_conditions.extend([True] * half_remaining)
+        ai_conditions.extend([False] * (remaining - half_remaining))
+    
+    # Shuffle the AI conditions to randomize which issues get which condition
     random.shuffle(ai_conditions)
+    
+    print(f"AI condition assignments: {ai_conditions} (True count: {sum(ai_conditions)}, False count: {len(ai_conditions) - sum(ai_conditions)})")
 
-    # Assign all 4 issues with sequence numbers and AI conditions
+    # Assign required issues with sequence numbers and AI conditions
     from datetime import datetime, timezone
     assigned_issues = []
 
     for idx, issue in enumerate(issues):
         issue_id = issue['issue_id']
-        sequence = idx + 1  # 1, 2, 3, 4
+        sequence = idx + 1
         using_ai = ai_conditions[idx]
 
         update_data = {
@@ -530,8 +541,8 @@ def assign_all_issues_to_participant(participant_id: str, repository: str):
         else:
             print(f"⚠️ Failed to assign issue {issue_id}")
 
-    if len(assigned_issues) == 4:
-        print(f"✅ Successfully assigned all 4 issues to participant {participant_id}")
+    if len(assigned_issues) == REQUIRED_ISSUE_COUNT:
+        print(f"Successfully assigned {REQUIRED_ISSUE_COUNT} issue(s) to participant {participant_id}")
         return {
             'success': True,
             'error': None,
@@ -540,7 +551,7 @@ def assign_all_issues_to_participant(participant_id: str, repository: str):
     else:
         return {
             'success': False,
-            'error': f"Only {len(assigned_issues)} of 4 issues were successfully assigned",
+            'error': f"Only {len(assigned_issues)} of {REQUIRED_ISSUE_COUNT} issues were successfully assigned",
             'issues': assigned_issues
         }
 
@@ -548,7 +559,7 @@ def assign_all_issues_to_participant(participant_id: str, repository: str):
 @safe_db_operation()
 def check_all_issues_assigned(participant_id: str):
     """
-    Check if a participant has all 4 issues assigned.
+    Check if a participant has all required issues assigned.
 
     Args:
         participant_id: The participant's ID
@@ -563,11 +574,11 @@ def check_all_issues_assigned(participant_id: str):
 
     count = result.count if hasattr(result, 'count') else (len(result.data) if result.data else 0)
 
-    print(f"Participant {participant_id} has {count} issues assigned")
+    print(f"Participant {participant_id} has {count} issues assigned (requires {REQUIRED_ISSUE_COUNT})")
 
     return {
         'success': True,
-        'all_assigned': count == 4,
+        'all_assigned': count >= REQUIRED_ISSUE_COUNT,
         'count': count
     }
 
@@ -601,6 +612,16 @@ def get_next_issue_in_sequence(participant_id: str):
 
     issues = result.data
     total_completed = sum(1 for issue in issues if issue.get('is_completed', False))
+
+    if total_completed >= REQUIRED_ISSUE_COUNT:
+        print(f"Participant {participant_id} has completed the required {REQUIRED_ISSUE_COUNT} issue(s)")
+        return {
+            'success': True,
+            'issue': None,
+            'sequence': None,
+            'total_completed': total_completed,
+            'error': None
+        }
 
     # Find first incomplete issue
     next_issue = None
@@ -730,7 +751,7 @@ def request_different_issue(participant_id: str, current_issue_id: int, justific
         'issue_swap_used': True
     }).eq('participant_id', participant_id).execute()
 
-    print(f"✅ Issue swap successful: {current_issue_id} -> {new_issue_id}")
+    print(f"Issue swap successful: {current_issue_id} -> {new_issue_id}")
 
     return {
         'success': True,
@@ -766,7 +787,7 @@ def update_issue_time_estimate(issue_id: int, time_estimate: str):
     print(f"Update result: {result}")
     
     if result.data and len(result.data) > 0:
-        print(f"✅ Successfully updated time estimate for issue {issue_id}")
+        print(f"Successfully updated time estimate for issue {issue_id}")
         return {
             'success': True,
             'error': None
@@ -812,7 +833,7 @@ def mark_issue_completed(issue_id: int, pr_url: str = None):
     print(f"Update result: {result}")
     
     if result.data and len(result.data) > 0:
-        print(f"✅ Successfully marked issue {issue_id} as completed")
+        print(f"Successfully marked issue {issue_id} as completed")
         return {
             'success': True,
             'error': None
@@ -846,7 +867,7 @@ def check_participant_ai_condition(participant_id: str, issue_id: int):
 
     if result.data and len(result.data) > 0:
         using_ai = result.data[0].get('using_ai', False)
-        print(f"✅ Issue {issue_id} using AI: {using_ai}")
+        print(f"Issue {issue_id} using AI: {using_ai}")
         return {
             'success': True,
             'using_ai': using_ai,
@@ -896,7 +917,7 @@ def save_ai_condition_responses(participant_id: str, issue_id: int, ai_speed_mul
     print(f"Data being upserted: {data}")
     
     if result.data and len(result.data) > 0:
-        print(f"✅ Successfully saved AI condition responses for participant {participant_id}")
+        print(f"Successfully saved AI condition responses for participant {participant_id}")
         return {
             'success': True,
             'error': None
@@ -1014,7 +1035,7 @@ def save_post_issue_responses(participant_id: str, issue_id: int, responses: dic
     print(f"Data being saved: {data}")
     
     if result.data and len(result.data) > 0:
-        print(f"✅ Successfully saved post-issue responses for participant {participant_id}")
+        print(f"Successfully saved post-issue responses for participant {participant_id}")
         return {
             'success': True,
             'error': None
@@ -1030,6 +1051,69 @@ def save_post_issue_responses(participant_id: str, issue_id: int, responses: dic
             'success': False,
             'error': f"Failed to save post-issue responses - RLS policy blocked insert"
         }
+
+
+@safe_db_operation()
+def save_pr_closed_responses(participant_id: str, issue_id: int, responses: dict):
+    """
+    Save PR-closed follow-up responses (collaboration, engagement, learning, etc.).
+
+    Args:
+        participant_id: The participant's ID
+        issue_id: Associated issue ID
+        responses: Dict of column -> value pairs to persist
+
+    Returns:
+        dict with 'success' and 'error' keys
+    """
+    print(f"=== SAVING PR-CLOSED RESPONSES ===")
+    print(f"Participant ID: {participant_id}, Issue ID: {issue_id}")
+    print(f"Responses: {responses}")
+
+    if not responses:
+        return {
+            'success': False,
+            'error': 'No responses provided to save'
+        }
+
+    data = {
+        'participant_id': participant_id,
+        'issue_id': issue_id,
+        **responses
+    }
+
+    table = supabase_client.table('pr-closed')
+
+    # Check if a record already exists for this participant/issue pair
+    existing = table.select('participant_id')\
+        .eq('participant_id', participant_id)\
+        .eq('issue_id', issue_id)\
+        .execute()
+
+    if existing.data and len(existing.data) > 0:
+        print("Existing PR-closed record found. Updating...")
+        result = table.update(responses)\
+            .eq('participant_id', participant_id)\
+            .eq('issue_id', issue_id)\
+            .execute()
+    else:
+        print("No PR-closed record found. Inserting new row...")
+        result = table.insert(data).execute()
+
+    print(f"PR-closed DB result: {result}")
+
+    if result.data and len(result.data) > 0:
+        print("Successfully saved PR-closed responses")
+        return {
+            'success': True,
+            'error': None
+        }
+
+    print("⚠️ Failed to write PR-closed responses (empty result). Check RLS policies.")
+    return {
+        'success': False,
+        'error': 'Failed to save PR-closed responses (RLS may be blocking the write)'
+    }
 
 
 @safe_db_operation()
@@ -1064,7 +1148,7 @@ def save_post_issue_reflection(participant_id: str, issue_id: int, responses: di
         print(f"Database operation result: {result}")
 
         if result.data and len(result.data) > 0:
-            print(f"✅ Successfully saved post-issue reflection for participant {participant_id}")
+            print(f"Successfully saved post-issue reflection for participant {participant_id}")
             return {
                 'success': True,
                 'error': None
@@ -1111,21 +1195,21 @@ def save_post_exp1_responses(participant_id: str, responses: dict):
     # Strategy 1: Try upsert first
     try:
         result = supabase_client.table('post-exp1').upsert(data, on_conflict='participant_id').execute()
-        print(f"✅ Upsert successful")
+        print(f"Upsert successful")
     except Exception as upsert_error:
         print(f"⚠️ Upsert failed: {upsert_error}")
 
         # Strategy 2: Try insert only
         try:
             result = supabase_client.table('post-exp1').insert(data).execute()
-            print(f"✅ Insert successful")
+            print(f"Insert successful")
         except Exception as insert_error:
             print(f"⚠️ Insert failed: {insert_error}")
 
             # Strategy 3: Try update only (in case record exists)
             try:
                 result = supabase_client.table('post-exp1').update(data).eq('participant_id', participant_id).execute()
-                print(f"✅ Update successful")
+                print(f"Update successful")
             except Exception as update_error:
                 print(f"❌ All strategies failed. Update error: {update_error}")
                 raise upsert_error  # Re-raise the original error
@@ -1134,7 +1218,7 @@ def save_post_exp1_responses(participant_id: str, responses: dict):
     print(f"Data being upserted: {data}")
     
     if result.data and len(result.data) > 0:
-        print(f"✅ Successfully saved post-exp1 responses for participant {participant_id}")
+        print(f"Successfully saved post-exp1 responses for participant {participant_id}")
         return {
             'success': True,
             'error': None
@@ -1275,14 +1359,17 @@ def check_participant_has_more_issues(participant_id: str):
             'error': None
         }
 
-    # Count completed vs total issues
-    total_count = len(all_issues.data)
-    completed_count = sum(1 for issue in all_issues.data if issue.get('is_completed') is True)
+    # Count completed vs total issues, but clamp to required count for display
+    actual_total = len(all_issues.data)
+    actual_completed = sum(1 for issue in all_issues.data if issue.get('is_completed') is True)
 
-    has_more = completed_count < total_count
+    total_count = min(actual_total, REQUIRED_ISSUE_COUNT)
+    completed_count = min(actual_completed, REQUIRED_ISSUE_COUNT)
 
-    print(f"✅ Participant {participant_id}: {completed_count}/{total_count} issues completed")
-    print(f"Has more issues: {has_more}")
+    has_more = completed_count < REQUIRED_ISSUE_COUNT and actual_total > 0
+
+    print(f"Participant {participant_id}: {completed_count}/{REQUIRED_ISSUE_COUNT} required issues completed (actual: {actual_completed}/{actual_total})")
+    print(f"Has more required issues: {has_more}")
 
     return {
         'success': True,
