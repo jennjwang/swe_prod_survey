@@ -6,7 +6,7 @@ Shows when participant returns after being assigned an issue.
 import streamlit as st
 import re
 from survey_components import page_header
-from survey_data import mark_issue_completed, get_participant_progress, REQUIRED_ISSUE_COUNT
+from survey_data import mark_issue_completed, get_participant_progress
 
 
 def is_valid_pr_url(url):
@@ -27,6 +27,20 @@ def issue_completion_page():
     issue_id = st.session_state['survey_responses'].get('issue_id', '')
     using_ai = st.session_state['survey_responses'].get('current_issue_using_ai', False)
 
+    # Track assigned/completed counts to handle repos with fewer available issues
+    assigned_count = 0
+    completed_count = 0
+    if participant_id:
+        from survey_data import supabase_client
+        try:
+            counts_result = supabase_client.table('repo-issues')\
+                .select('is_completed', count='exact')\
+                .eq('participant_id', participant_id)\
+                .execute()
+            assigned_count = counts_result.count if counts_result.count is not None else (len(counts_result.data) if counts_result.data else 0)
+            completed_count = sum(1 for issue in (counts_result.data or []) if issue.get('is_completed'))
+        except Exception as e:
+            print(f"Error getting issue counts: {e}")
 
     # Only show current issue section if there's an active issue assigned
     if issue_url and issue_id:
@@ -214,23 +228,8 @@ def issue_completion_page():
         # No active issue assigned - show message
         page_header("Issue Status", "Check your issue status and manage completed PRs.")
 
-        # Calculate progress
-        completed_count = 0
-        if participant_id:
-            from survey_data import supabase_client
-            try:
-                # Get count of completed issues (those with post-issue survey completed)
-                result = supabase_client.table('repo-issues')\
-                    .select('issue_id', count='exact')\
-                    .eq('participant_id', participant_id)\
-                    .eq('is_completed', True)\
-                    .execute()
-                completed_count = result.count if result.count else 0
-            except Exception as e:
-                print(f"Error getting completed count: {e}")
-        
         st.info(
-        f"You have completed {completed_count} of {REQUIRED_ISSUE_COUNT} assigned issues."
+        f"You have completed {completed_count} of {assigned_count} assigned issues."
         )
 
     st.divider()
@@ -238,23 +237,8 @@ def issue_completion_page():
     st.subheader("Check on previous PRs")
 
     if issue_id and issue_url:
-    # Calculate progress
-        completed_count = 0
-        if participant_id:
-            from survey_data import supabase_client
-            try:
-                # Get count of completed issues (those with post-issue survey completed)
-                result = supabase_client.table('repo-issues')\
-                    .select('issue_id', count='exact')\
-                    .eq('participant_id', participant_id)\
-                    .eq('is_completed', True)\
-                    .execute()
-                completed_count = result.count if result.count else 0
-            except Exception as e:
-                print(f"Error getting completed count: {e}")
-        
         st.info(
-        f"You have completed {completed_count} of {REQUIRED_ISSUE_COUNT} assigned issues."
+        f"You have completed {completed_count} of {assigned_count} assigned issues."
         )
 
     st.markdown("Once you have completed a PR, you can enter its URL to check its AI condition:")

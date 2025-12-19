@@ -142,122 +142,141 @@ def issue_assignment_page():
     if participant_id:
         check_result = check_all_issues_assigned(participant_id)
 
-        if check_result['success'] and not check_result['all_assigned']:
-            # First time - assign the required issue(s)
-            st.markdown("""
-                <p style='font-size:18px; margin-bottom: 1.5rem;'>
-                We want this to feel like the open source development process, so please don’t hesitate to seek clarification and engage in discussion with the project maintainer.
-                </p>
-                """, unsafe_allow_html=True)
+        if check_result['success']:
+            assigned_count = check_result.get('count', 0)
+            has_assignments = assigned_count > 0
+            limited_inventory = assigned_count < REQUIRED_ISSUE_COUNT
 
-            col1, col2 = st.columns([1, 2])
-            with col1:
-                if st.button("Get My Assignments", key="assign_all", type="primary", use_container_width=True):
-                    with st.spinner(f"Assigning your {issue_word}..."):
-                        assign_result = assign_all_issues_to_participant(participant_id, assigned_repo)
-
-        elif check_result['success'] and check_result['all_assigned']:
-            # Get next issue in sequence
-            next_result = get_next_issue_in_sequence(participant_id)
-
-            if next_result['success'] and next_result['issue']:
-                # Show next issue
-                issue = next_result['issue']
-                sequence = next_result['sequence']
-                total_completed = next_result['total_completed']
-
-                # Progress indicator
-                completed_display = min(total_completed, REQUIRED_ISSUE_COUNT)
-                st.warning(f"**Progress:** {completed_display} of {REQUIRED_ISSUE_COUNT} {issue_word} completed")
-
-                # Show issue details
-                issue_url = issue.get('issue_url', '') or issue.get('url', '')
-                issue_id = issue.get('issue_id', '')
-
+            if not has_assignments:
+                # First time - assign available issue(s)
                 st.markdown("""
-                    <p style='font-size:18px; margin-top: 1rem; margin-bottom: 1rem;'>
-                    <strong>Your Next Issue:</strong>
+                    <p style='font-size:18px; margin-bottom: 1.5rem;'>
+                    We want this to feel like the open source development process, so please don’t hesitate to seek clarification and engage in discussion with the project maintainer.
                     </p>
                     """, unsafe_allow_html=True)
-                
-                if issue_url:
-                    st.markdown(f"""
-                        <p style='font-size:18px;'>
-                        <a href="{issue_url}" target="_blank">{issue_url}</a>
+
+                col1, col2 = st.columns([1, 2])
+                with col1:
+                    if st.button("Get My Assignments", key="assign_all", type="primary", use_container_width=True):
+                        with st.spinner(f"Assigning your {issue_word}..."):
+                            assign_result = assign_all_issues_to_participant(participant_id, assigned_repo)
+                            if assign_result.get('success'):
+                                st.rerun()
+                            else:
+                                st.error(assign_result.get('error', 'Unable to assign issues.'))
+            else:
+                if limited_inventory:
+                    issue_noun = "issue" if assigned_count == 1 else "issues"
+                    repo_display = assigned_repo or "your repository"
+                    st.warning(f"Only {assigned_count} {issue_noun} were available for {repo_display}. We’ll assign additional issues automatically once more become available.")
+
+                # Get next issue in sequence
+                next_result = get_next_issue_in_sequence(participant_id)
+
+                if next_result['success'] and next_result['issue']:
+                    # Show next issue
+                    issue = next_result['issue']
+                    sequence = next_result['sequence']
+                    total_completed = next_result.get('total_completed', 0)
+                    total_assigned = next_result.get('total_assigned', assigned_count)
+
+                    # Progress indicator based on actual assigned issues
+                    completed_display = min(total_completed, total_assigned)
+                    progress_noun = "issue" if total_assigned == 1 else "issues"
+                    st.warning(f"**Progress:** {completed_display} of {total_assigned} {progress_noun} completed")
+
+                    # Show issue details
+                    issue_url = issue.get('issue_url', '') or issue.get('url', '')
+                    issue_id = issue.get('issue_id', '')
+
+                    st.markdown("""
+                        <p style='font-size:18px; margin-top: 1rem; margin-bottom: 1rem;'>
+                        <strong>Your Next Issue:</strong>
                         </p>
                         """, unsafe_allow_html=True)
+                    
+                    if issue_url:
+                        st.markdown(f"""
+                            <p style='font-size:18px;'>
+                            <a href="{issue_url}" target="_blank">{issue_url}</a>
+                            </p>
+                            """, unsafe_allow_html=True)
+                    else:
+                        st.warning(f"Issue ID: {issue_id} (URL not available)")
+                        print(f"DEBUG: Issue data: {issue}")
+
+                    st.divider()
+
+                    # Instructions to claim the issue
+                    st.markdown("""
+                        <p style='font-size:18px; margin-top: 1rem; margin-bottom: 1rem;'>
+                        <strong>Before you start:</strong>
+                        </p>
+                        """, unsafe_allow_html=True)
+
+                    st.markdown("""
+                        <p style='font-size:16px; margin-bottom: 1rem;'>
+                        Please go to the issue discussion and claim the issue by leaving a comment
+                        (e.g., "I'd like to work on this issue").
+                        This follows standard open-source
+                        contribution practices.
+                        </p>
+                        """, unsafe_allow_html=True)
+
+                    # Checkbox to confirm they've claimed the issue
+                    claimed_issue = st.checkbox(
+                        "I have claimed this issue in the discussion",
+                        key=f"claimed_issue_{issue_id}"
+                    )
+
+                    # Warning to not work on the issue yet - only show if checkbox is checked
+                    if claimed_issue:
+                        st.warning("""
+                        ⚠️ **Important:** Please do not work on the issue yet.
+                        On the next two pages, you will estimate the time needed to complete this issue and be assigned an AI condition.
+                        Only begin working after completing these steps.
+                        """)
+
+                    # Navigation button
+                    col1, col2, col3 = st.columns([1, 2, 1])
+                    with col1:
+                        if st.button("Start This Issue", key="start_issue", type="primary", use_container_width=True, disabled=not claimed_issue):
+                            # Save issue info to session state
+                            st.session_state['survey_responses']['assigned_issue'] = issue
+                            st.session_state['survey_responses']['issue_url'] = issue_url
+                            st.session_state['survey_responses']['issue_id'] = issue['issue_id']
+
+                            # Reset post-exp1 completion flag for new issue
+                            st.session_state['post_exp1_completed'] = False
+
+                            # Save AI condition (will be shown after time estimation)
+                            using_ai = issue.get('using_ai', False)
+                            st.session_state['survey_responses']['current_issue_using_ai'] = using_ai
+
+                            # Go directly to time estimation page
+                            st.session_state['page'] = 9  # time_estimation_page
+                            st.rerun()
+
+                    st.divider()
+
+                    # Note about requesting a different issue
+                    st.caption("If you would like to request a different issue, please contact jennjwang@stanford.edu with a justification. We will facilitate the swap if it is well-justified.")
+
+                elif next_result['success'] and next_result['issue'] is None:
+                    # All assigned issues complete
+                    total_assigned = next_result.get('total_assigned', assigned_count)
+                    st.success("You have completed all assigned issues!")
+                    if limited_inventory:
+                        completed_noun = "issue" if total_assigned == 1 else "issues"
+                        st.info(f"You were assigned {total_assigned} {completed_noun} because only those were available in the repository.")
+                    st.markdown("""
+                        <p style='font-size:18px; margin-top: 1rem;'>
+                        Thank you for your participation. Please proceed to the final survey questions.
+                        </p>
+                        """, unsafe_allow_html=True)
+
                 else:
-                    st.warning(f"Issue ID: {issue_id} (URL not available)")
-                    print(f"DEBUG: Issue data: {issue}")
-
-                st.divider()
-
-                # Instructions to claim the issue
-                st.markdown("""
-                    <p style='font-size:18px; margin-top: 1rem; margin-bottom: 1rem;'>
-                    <strong>Before you start:</strong>
-                    </p>
-                    """, unsafe_allow_html=True)
-
-                st.markdown("""
-                    <p style='font-size:16px; margin-bottom: 1rem;'>
-                    Please go to the issue discussion and claim the issue by leaving a comment
-                    (e.g., "I'd like to work on this issue").
-                    This follows standard open-source
-                    contribution practices.
-                    </p>
-                    """, unsafe_allow_html=True)
-
-                # Checkbox to confirm they've claimed the issue
-                claimed_issue = st.checkbox(
-                    "I have claimed this issue in the discussion",
-                    key=f"claimed_issue_{issue_id}"
-                )
-
-                # Warning to not work on the issue yet - only show if checkbox is checked
-                if claimed_issue:
-                    st.warning("""
-                    ⚠️ **Important:** Please do not work on the issue yet.
-                    On the next two pages, you will estimate the time needed to complete this issue and be assigned an AI condition.
-                    Only begin working after completing these steps.
-                    """)
-
-                # Navigation button
-                col1, col2, col3 = st.columns([1, 2, 1])
-                with col1:
-                    if st.button("Start This Issue", key="start_issue", type="primary", use_container_width=True, disabled=not claimed_issue):
-                        # Save issue info to session state
-                        st.session_state['survey_responses']['assigned_issue'] = issue
-                        st.session_state['survey_responses']['issue_url'] = issue_url
-                        st.session_state['survey_responses']['issue_id'] = issue['issue_id']
-
-                        # Reset post-exp1 completion flag for new issue
-                        st.session_state['post_exp1_completed'] = False
-
-                        # Save AI condition (will be shown after time estimation)
-                        using_ai = issue.get('using_ai', False)
-                        st.session_state['survey_responses']['current_issue_using_ai'] = using_ai
-
-                        # Go directly to time estimation page
-                        st.session_state['page'] = 9  # time_estimation_page
-                        st.rerun()
-
-                st.divider()
-
-                # Note about requesting a different issue
-                st.caption("If you would like to request a different issue, please contact jennjwang@stanford.edu with a justification. We will facilitate the swap if it is well-justified.")
-
-            elif next_result['success'] and next_result['issue'] is None:
-                # All required issues complete
-                st.success("You have completed all required issues!")
-                st.markdown("""
-                    <p style='font-size:18px; margin-top: 1rem;'>
-                    Thank you for your participation. Please proceed to the final survey questions.
-                    </p>
-                    """, unsafe_allow_html=True)
-
-            else:
-                st.error(f"⚠️ Error retrieving next issue: {next_result.get('error', 'Unknown error')}")
+                    st.error(f"⚠️ Error retrieving next issue: {next_result.get('error', 'Unknown error')}")
 
         else:
             st.error("⚠️ Error checking issue assignments. Please contact the study administrator.")

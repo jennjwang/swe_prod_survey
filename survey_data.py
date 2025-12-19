@@ -447,7 +447,8 @@ def assign_issue_to_participant(participant_id: str, issue_id: int):
 @safe_db_operation()
 def assign_all_issues_to_participant(participant_id: str, repository: str):
     """
-    Assign the required number of issues to a participant with randomized order and AI conditions.
+    Assign issues to a participant with randomized order and AI conditions.
+    Will assign all available unassigned issues even if fewer than REQUIRED_ISSUE_COUNT.
 
     Args:
         participant_id: The participant's ID
@@ -460,7 +461,7 @@ def assign_all_issues_to_participant(participant_id: str, repository: str):
     print(f"Participant: {participant_id}")
     print(f"Repository: {repository}")
 
-    # Get required number of unassigned issues from the repository
+    # Get up to the required number of unassigned issues from the repository
     result = supabase_client.table('repo-issues')\
         .select('*')\
         .eq('repository', repository)\
@@ -468,11 +469,11 @@ def assign_all_issues_to_participant(participant_id: str, repository: str):
         .limit(REQUIRED_ISSUE_COUNT)\
         .execute()
 
-    if not result.data or len(result.data) < REQUIRED_ISSUE_COUNT:
-        error_msg = (
-            f"Not enough unassigned issues available. "
-            f"Found {len(result.data) if result.data else 0}, need {REQUIRED_ISSUE_COUNT}."
-        )
+    available_issues = result.data or []
+    available_count = len(available_issues)
+
+    if available_count == 0:
+        error_msg = "No unassigned issues available for this repository."
         print(f"⚠️ {error_msg}")
         return {
             'success': False,
@@ -480,8 +481,11 @@ def assign_all_issues_to_participant(participant_id: str, repository: str):
             'issues': []
         }
 
-    issues = result.data
-    print(f"Found {len(issues)} unassigned issues")
+    if available_count < REQUIRED_ISSUE_COUNT:
+        print(f"⚠️ Not enough unassigned issues available. Found {available_count}, need {REQUIRED_ISSUE_COUNT}. Assigning available issues.")
+
+    issues = available_issues
+    print(f"Found {len(issues)} unassigned issues to assign")
 
     # Randomly shuffle the issues to randomize order
     import random
@@ -541,8 +545,8 @@ def assign_all_issues_to_participant(participant_id: str, repository: str):
         else:
             print(f"⚠️ Failed to assign issue {issue_id}")
 
-    if len(assigned_issues) == REQUIRED_ISSUE_COUNT:
-        print(f"Successfully assigned {REQUIRED_ISSUE_COUNT} issue(s) to participant {participant_id}")
+    if len(assigned_issues) == len(issues):
+        print(f"Successfully assigned {len(assigned_issues)} issue(s) to participant {participant_id}")
         return {
             'success': True,
             'error': None,
@@ -551,7 +555,7 @@ def assign_all_issues_to_participant(participant_id: str, repository: str):
     else:
         return {
             'success': False,
-            'error': f"Only {len(assigned_issues)} of {REQUIRED_ISSUE_COUNT} issues were successfully assigned",
+            'error': f"Only {len(assigned_issues)} of {len(issues)} issues were successfully assigned",
             'issues': assigned_issues
         }
 
@@ -592,7 +596,7 @@ def get_next_issue_in_sequence(participant_id: str):
         participant_id: The participant's ID
 
     Returns:
-        dict with 'success', 'issue', 'sequence', 'total_completed' keys
+        dict with 'success', 'issue', 'sequence', 'total_completed', 'total_assigned' keys
     """
     # Get all issues for participant ordered by sequence
     result = supabase_client.table('repo-issues')\
@@ -607,19 +611,22 @@ def get_next_issue_in_sequence(participant_id: str):
             'error': 'No issues found for participant',
             'issue': None,
             'sequence': None,
-            'total_completed': 0
+            'total_completed': 0,
+            'total_assigned': 0
         }
 
     issues = result.data
+    total_assigned = len(issues)
     total_completed = sum(1 for issue in issues if issue.get('is_completed', False))
 
-    if total_completed >= REQUIRED_ISSUE_COUNT:
-        print(f"Participant {participant_id} has completed the required {REQUIRED_ISSUE_COUNT} issue(s)")
+    if total_completed >= total_assigned:
+        print(f"Participant {participant_id} has completed all {total_assigned} assigned issue(s)")
         return {
             'success': True,
             'issue': None,
             'sequence': None,
             'total_completed': total_completed,
+            'total_assigned': total_assigned,
             'error': None
         }
 
@@ -638,6 +645,7 @@ def get_next_issue_in_sequence(participant_id: str):
             'issue': next_issue,
             'sequence': sequence,
             'total_completed': total_completed,
+            'total_assigned': total_assigned,
             'error': None
         }
     else:
@@ -648,6 +656,7 @@ def get_next_issue_in_sequence(participant_id: str):
             'issue': None,
             'sequence': None,
             'total_completed': total_completed,
+            'total_assigned': total_assigned,
             'error': None
         }
 
@@ -1359,17 +1368,17 @@ def check_participant_has_more_issues(participant_id: str):
             'error': None
         }
 
-    # Count completed vs total issues, but clamp to required count for display
+    # Count completed vs total issues
     actual_total = len(all_issues.data)
     actual_completed = sum(1 for issue in all_issues.data if issue.get('is_completed') is True)
 
-    total_count = min(actual_total, REQUIRED_ISSUE_COUNT)
-    completed_count = min(actual_completed, REQUIRED_ISSUE_COUNT)
+    total_count = actual_total
+    completed_count = actual_completed
 
-    has_more = completed_count < REQUIRED_ISSUE_COUNT and actual_total > 0
+    has_more = completed_count < total_count
 
-    print(f"Participant {participant_id}: {completed_count}/{REQUIRED_ISSUE_COUNT} required issues completed (actual: {actual_completed}/{actual_total})")
-    print(f"Has more required issues: {has_more}")
+    print(f"Participant {participant_id}: {completed_count}/{total_count} assigned issues completed")
+    print(f"Has more assigned issues: {has_more}")
 
     return {
         'success': True,
