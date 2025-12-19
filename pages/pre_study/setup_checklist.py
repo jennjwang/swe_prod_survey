@@ -64,7 +64,16 @@ def setup_checklist_page():
     
     # Checkbox 5
     check5 = st.checkbox("**5. Use the Screen Recording Tool**", key="checklist_item_5")
-    st.markdown("We track the time you spend on each task using the recording tool. Please make sure to start the recording tool when you begin working on an issue, and stop it when you take breaks or finish for the session.")
+    st.markdown("""
+    We track the time you spend on each task using the recording tool. Start it when you begin working on an issue, and stop it when you take breaks or finish for the session.
+
+    When running the screen recorder, please include the `--pr` argument with the appropriate PR or issue number:
+    ```bash
+    swe-prod-recorder --pr {pr_number}
+    ```
+    If you are in the initial implementation stage, use the issue number. If you’re updating an existing PR, use the PR number. You can find the correct issue or PR number in the GitHub URL or directly on the issue or PR page.  (e.g., https://github.com/swe-productivity/dspy/pull/7 -> `swe-prod-recorder --pr 7`). 
+    Make sure all coding activity is captured, including reading issues, writingcode and responding to comments.
+    """)
     st.markdown("")
 
     # Checkbox 6
