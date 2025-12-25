@@ -351,9 +351,21 @@ def get_random_unassigned_issue(repository: str):
     Returns:
         dict with 'success', 'issue' (dict with url, id), and 'error' keys
     """
-    # Get all unassigned issues for this repository (match by repository name only)
-    print(f"Getting unassigned issues for repository: {repository}")
-    response = supabase_client.table('repo-issues').select('*').eq('repository', repository).eq('is_assigned', False).execute()
+    repo_name = extract_repo_name(repository.strip()) if repository else ''
+    if not repo_name:
+        return {
+            'success': False,
+            'error': 'Repository name missing for assignment',
+            'issue': None
+        }
+
+    # Get all unassigned issues for this repository
+    print(f"Getting unassigned issues for repository: {repo_name}")
+    response = supabase_client.table('repo-issues')\
+        .select('*')\
+        .eq('repository', repo_name)\
+        .or_('is_assigned.eq.false,is_assigned.is.null')\
+        .execute()
 
     print(f"Found {len(response.data) if response.data else 0} unassigned issues for {repository}")
     if not response.data or len(response.data) == 0:
@@ -461,11 +473,21 @@ def assign_all_issues_to_participant(participant_id: str, repository: str):
     print(f"Participant: {participant_id}")
     print(f"Repository: {repository}")
 
+    repo_name = extract_repo_name(repository.strip()) if repository else ''
+    if not repo_name:
+        error_msg = "Repository name missing for assignment."
+        print(f"⚠️ {error_msg}")
+        return {
+            'success': False,
+            'error': error_msg,
+            'issues': []
+        }
+
     # Get up to the required number of unassigned issues from the repository
     result = supabase_client.table('repo-issues')\
         .select('*')\
-        .eq('repository', repository)\
-        .eq('is_assigned', False)\
+        .eq('repository', repo_name)\
+        .or_('is_assigned.eq.false,is_assigned.is.null')\
         .limit(REQUIRED_ISSUE_COUNT)\
         .execute()
 
@@ -717,10 +739,19 @@ def request_different_issue(participant_id: str, current_issue_id: int, justific
     using_ai = current_issue['using_ai']
 
     # Find a new unassigned issue from the same repository
+    repo_name = extract_repo_name(repository.strip()) if repository else ''
+    if not repo_name:
+        return {
+            'success': False,
+            'already_used': False,
+            'new_issue': None,
+            'error': 'Repository missing for issue swap.'
+        }
+
     new_issue_result = supabase_client.table('repo-issues')\
         .select('*')\
-        .eq('repository', repository)\
-        .eq('is_assigned', False)\
+        .eq('repository', repo_name)\
+        .or_('is_assigned.eq.false,is_assigned.is.null')\
         .limit(1)\
         .execute()
 
