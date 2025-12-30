@@ -14,6 +14,40 @@ def completion_page():
     # Get participant ID
     participant_id = st.session_state['survey_responses'].get('participant_id', '')
 
+    # Refresh post-exp1 completion status from database if not already set
+    if participant_id and not st.session_state.get('post_exp1_completed', False):
+        try:
+            from survey_data import check_post_exp1_completed
+            post_exp1_status = check_post_exp1_completed(participant_id)
+            if post_exp1_status.get('success') and post_exp1_status.get('completed'):
+                st.session_state['post_exp1_completed'] = True
+        except Exception as e:
+            print(f"Error checking post-exp1 completion: {e}")
+
+    # If any completed issue is missing post-PR responses, redirect to those pages first
+    if participant_id:
+        from survey_data import get_issue_needing_survey
+        survey_check = get_issue_needing_survey(participant_id)
+        if survey_check['success'] and survey_check['issue']:
+            issue = survey_check['issue']
+            issue_id = issue['issue_id']
+            nasa_tlx_1 = survey_check.get('nasa_tlx_1')
+            ai_code_quality = survey_check.get('ai_code_quality')
+            using_ai = survey_check.get('using_ai', False)
+
+            st.session_state['survey_responses']['issue_id'] = issue_id
+            st.session_state['survey_responses']['issue_url'] = issue.get('issue_url', '')
+            st.session_state['survey_responses']['current_issue_using_ai'] = using_ai
+
+            if nasa_tlx_1 is None:
+                st.session_state['page'] = 12  # post_issue_questions_page
+            elif using_ai and ai_code_quality is None:
+                st.session_state['page'] = 13  # post_issue_reflection_page
+            else:
+                st.session_state['page'] = 13  # post_issue_reflection_page
+            st.rerun()
+            return
+
     # Check if participant has completed post-exp1 questions yet
     post_exp1_completed = st.session_state.get('post_exp1_completed', False)
 

@@ -44,11 +44,11 @@ def issue_assignment_page():
                 print(f"DEBUG: Issue {issue_id} NASA-TLX not done, redirecting to page 12")
                 st.session_state['page'] = 12  # post_issue_questions_page
             elif using_ai and ai_code_quality is None:
-                # AI user hasn't done AI condition questions
-                print(f"DEBUG: Issue {issue_id} AI questions not done, redirecting to page 11")
-                st.session_state['page'] = 11  # ai_condition_questions_page
+                # AI user still needs reflection questions
+                print(f"DEBUG: Issue {issue_id} AI reflection not done, redirecting to page 13")
+                st.session_state['page'] = 13  # post_issue_reflection_page
             else:
-                # All done, go to reflection page
+                # All done, go to reflection page (final step)
                 print(f"DEBUG: Issue {issue_id} survey done, redirecting to page 13")
                 st.session_state['page'] = 13  # post_issue_reflection_page
             st.rerun()

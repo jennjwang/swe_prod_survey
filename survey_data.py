@@ -1418,3 +1418,124 @@ def check_participant_has_more_issues(participant_id: str):
         'total_count': total_count,
         'error': None
     }
+
+
+@safe_db_operation(error_defaults={'missing': []})
+def get_missing_post_pr_surveys(participant_id: str):
+    """
+    Return completed issues that are missing post-PR responses.
+
+    Args:
+        participant_id: The participant's ID
+
+    Returns:
+        dict with 'success', 'missing' (list of issue info), and 'error' keys
+    """
+    if not participant_id:
+        return {
+            'success': False,
+            'missing': [],
+            'error': 'Participant ID is required'
+        }
+
+    completed = supabase_client.table('repo-issues')\
+        .select('issue_id, issue_url, using_ai')\
+        .eq('participant_id', participant_id)\
+        .eq('is_completed', True)\
+        .execute()
+
+    missing = []
+    for issue in completed.data or []:
+        issue_id = issue.get('issue_id')
+        issue_url = issue.get('issue_url')
+        using_ai = issue.get('using_ai') is True
+
+        # Skip if issue_id missing to avoid errors
+        if issue_id is None:
+            missing.append({
+                'issue_id': issue_id,
+                'issue_url': issue_url,
+                'using_ai': using_ai,
+                'reason': 'missing issue_id'
+            })
+            continue
+
+        post_pr = supabase_client.table('post-PR')\
+            .select('nasa_tlx_1, ai_code_quality')\
+            .eq('participant_id', participant_id)\
+            .eq('issue_id', int(issue_id))\
+            .execute()
+
+        if not post_pr.data:
+            missing.append({
+                'issue_id': issue_id,
+                'issue_url': issue_url,
+                'using_ai': using_ai,
+                'reason': 'no post-PR record'
+            })
+            continue
+
+        record = post_pr.data[0]
+        nasa = record.get('nasa_tlx_1')
+        ai_quality = record.get('ai_code_quality')
+
+        needed_missing = []
+        if nasa is None:
+            needed_missing.append('nasa_tlx_1')
+        if using_ai and ai_quality is None:
+            needed_missing.append('ai_code_quality')
+
+        if needed_missing:
+            missing.append({
+                'issue_id': issue_id,
+                'issue_url': issue_url,
+                'using_ai': using_ai,
+                'reason': 'missing fields',
+                'missing_fields': needed_missing
+            })
+
+    return {
+        'success': True,
+        'missing': missing,
+        'error': None
+    }
+
+
+@safe_db_operation(error_defaults={'completed': False})
+def check_post_exp1_completed(participant_id: str):
+    """
+    Check if a participant has completed post-exp1 responses.
+
+    Args:
+        participant_id: The participant's ID
+
+    Returns:
+        dict with 'success', 'completed', and 'error' keys
+    """
+    if not participant_id:
+        return {
+            'success': False,
+            'completed': False,
+            'error': 'Participant ID is required'
+        }
+
+    result = supabase_client.table('post-exp1')\
+        .select('workflow_comparison, ai_helpful_tasks, ai_wish_different, ai_suggestion_decisions')\
+        .eq('participant_id', participant_id)\
+        .execute()
+
+    completed = False
+    if result.data and len(result.data) > 0:
+        record = result.data[0]
+        completed = (
+            record.get('workflow_comparison') is not None and
+            record.get('ai_helpful_tasks') is not None and
+            record.get('ai_wish_different') is not None and
+            record.get('ai_suggestion_decisions') is not None
+        )
+
+    return {
+        'success': True,
+        'completed': completed,
+        'error': None
+    }

@@ -15,6 +15,24 @@ def ai_condition_questions_page():
     participant_id = st.session_state['survey_responses'].get('participant_id', '')
     issue_id = st.session_state['survey_responses'].get('issue_id', '')
 
+    # Recovery logic: if issue_id is missing, try to recover from database
+    if participant_id and not issue_id:
+        from survey_data import get_issue_needing_survey
+        survey_check = get_issue_needing_survey(participant_id)
+        if survey_check['success'] and survey_check['issue']:
+            issue = survey_check['issue']
+            issue_id = issue['issue_id']
+            st.session_state['survey_responses']['issue_id'] = issue_id
+            st.session_state['survey_responses']['issue_url'] = issue.get('issue_url', '')
+            st.session_state['survey_responses']['current_issue_using_ai'] = survey_check.get('using_ai', False)
+            print(f"DEBUG: Recovered issue_id {issue_id} from database for AI condition questions")
+        else:
+            # No issue needing survey, redirect to completion page
+            print("DEBUG: No issue needing survey, redirecting to completion page")
+            st.session_state['page'] = 16
+            st.rerun()
+            return
+
     # Check if this issue uses AI
     if participant_id and issue_id:
         ai_check = check_participant_ai_condition(participant_id, issue_id)

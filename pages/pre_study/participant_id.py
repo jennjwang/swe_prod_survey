@@ -102,6 +102,34 @@ def participant_id_page():
                         next_issue_result = get_next_issue_in_sequence(participant_id)
 
                         if next_issue_result['success'] and next_issue_result['issue'] is None:
+                            # All issues are marked completed, but ensure post-PR surveys are done
+                            from survey_data import get_issue_needing_survey
+                            survey_check = get_issue_needing_survey(participant_id)
+
+                            if survey_check['success'] and survey_check['issue']:
+                                issue = survey_check['issue']
+                                issue_id = issue['issue_id']
+                                nasa_tlx_1 = survey_check.get('nasa_tlx_1')
+                                ai_code_quality = survey_check.get('ai_code_quality')
+                                using_ai = survey_check.get('using_ai', False)
+
+                                # Restore issue info to session state
+                                st.session_state['survey_responses']['issue_id'] = issue_id
+                                st.session_state['survey_responses']['issue_url'] = issue.get('issue_url', '')
+                                st.session_state['survey_responses']['current_issue_using_ai'] = using_ai
+
+                                # Route to the correct post-PR page
+                                if nasa_tlx_1 is None:
+                                    print(f"DEBUG: Issue {issue_id} NASA-TLX not done, redirecting to page 12")
+                                    st.session_state['page'] = 12  # post_issue_questions_page
+                                elif using_ai and ai_code_quality is None:
+                                    print(f"DEBUG: Issue {issue_id} AI reflection not done, redirecting to page 13")
+                                    st.session_state['page'] = 13  # post_issue_reflection_page
+                                else:
+                                    print(f"DEBUG: Issue {issue_id} survey done except reflection, redirecting to page 13")
+                                    st.session_state['page'] = 13  # post_issue_reflection_page
+                                st.rerun()
+
                             # All required issues completed, check if there are reviewed PRs needing updates
                             print("DEBUG: All required issues completed, checking for reviewed PRs")
 
@@ -194,7 +222,7 @@ def participant_id_page():
                             if is_completed and not checklist_completed_issue:
                                 # Issue completed but survey not done, go to post-issue questions
                                 print("DEBUG: Issue completed, survey pending, routing to post-issue questions")
-                                st.session_state['page'] = 11  # AI condition questions page
+                                st.session_state['page'] = 12  # post_issue_questions_page
                                 st.rerun()
                             elif has_time_estimate and not is_completed:
                                 # Has accepted issue and estimated time, route to issue completion page

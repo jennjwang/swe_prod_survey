@@ -6,7 +6,11 @@ Shows when participant returns after being assigned an issue.
 import streamlit as st
 import re
 from survey_components import page_header
-from survey_data import mark_issue_completed, get_participant_progress
+from survey_data import (
+    mark_issue_completed,
+    check_pr_survey_completion,
+    get_missing_post_pr_surveys,
+)
 
 
 def is_valid_pr_url(url):
@@ -190,15 +194,15 @@ def issue_completion_page():
                     st.session_state['survey_responses']['pr_url'] = pr_url.strip()
                     st.session_state['completion_choice'] = None
 
-                    # Check if survey already completed
-                    progress_result = get_participant_progress(participant_id)
+                    # Check if the current issue's post-PR survey is already completed
+                    survey_check = check_pr_survey_completion(participant_id, int(issue_id))
 
-                    if progress_result['success'] and progress_result['progress']['issue_survey_completed']:
-                        # Survey already complete, go to completion page
+                    if survey_check.get('success') and survey_check.get('completed'):
+                        # Survey already complete for this issue, go to completion page
                         st.session_state['page'] = 16
                     else:
-                        # Go to AI condition questions (will auto-skip if not using AI)
-                        st.session_state['page'] = 11
+                        # Go to post-issue questions (AI reflection handled there)
+                        st.session_state['page'] = 12
 
                     st.rerun()
                 else:
@@ -284,6 +288,33 @@ def issue_completion_page():
 
                 else:
                     st.error(f"PR URL not found in the database. Please check the URL and try again.")
+
+    st.markdown("<div style='margin-top: 2rem;'></div>", unsafe_allow_html=True)
+    st.divider()
+
+    # Post-PR survey completeness check
+    st.subheader("Post-PR survey status")
+    if participant_id:
+        with st.spinner("Checking post-PR responses..."):
+            missing_result = get_missing_post_pr_surveys(participant_id)
+
+        if missing_result['success']:
+            missing = missing_result.get('missing', [])
+            if not missing:
+                st.success("All completed issues have post-PR responses saved.")
+            else:
+                st.warning(f"{len(missing)} completed issue(s) still need post-PR responses.")
+                for item in missing:
+                    issue_id = item.get('issue_id')
+                    issue_url = item.get('issue_url') or f"Issue {issue_id}"
+                    reason = item.get('reason', 'missing data')
+                    fields = item.get('missing_fields', [])
+                    details = f"Missing: {', '.join(fields)}" if fields else reason
+                    st.write(f"- {issue_url}: {details}")
+        else:
+            st.error(f"Unable to check post-PR status: {missing_result.get('error')}")
+    else:
+        st.info("Enter your participant ID to check post-PR survey status.")
 
     st.markdown("<div style='margin-top: 2rem;'></div>", unsafe_allow_html=True)
     st.divider()

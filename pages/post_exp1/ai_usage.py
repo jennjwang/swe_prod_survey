@@ -176,6 +176,7 @@ def ai_usage_page():
 
         # Save to session state
         st.session_state['survey_responses']['ai_usage'] = all_responses
+        st.session_state['post_exp1_completed'] = True
 
         # Save to database
         participant_id = st.session_state['survey_responses'].get('participant_id', '')

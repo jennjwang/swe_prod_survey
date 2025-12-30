@@ -25,19 +25,23 @@ def post_issue_questions_page():
     participant_id = st.session_state['survey_responses'].get('participant_id', '')
     issue_id = st.session_state['survey_responses'].get('issue_id', '')
 
-    # Check if this issue uses AI and if AI condition questions are completed
-    if participant_id and issue_id:
-        from survey_data import check_participant_ai_condition
-        ai_check = check_participant_ai_condition(participant_id, issue_id)
-        if ai_check['success'] and ai_check['using_ai']:
-            # AI user - check if they've completed AI condition questions
-            ai_code_quality_desc = st.session_state['survey_responses'].get('ai_code_quality_description', '')
-            if not ai_code_quality_desc or not ai_code_quality_desc.strip():
-                # Haven't completed AI condition questions, redirect back
-                print(f"DEBUG: AI user hasn't completed AI condition questions, redirecting to page 11")
-                st.session_state['page'] = 11  # ai_condition_questions_page
-                st.rerun()
-                return
+    # Recovery logic: if issue_id is missing, try to recover from database
+    if participant_id and not issue_id:
+        from survey_data import get_issue_needing_survey
+        survey_check = get_issue_needing_survey(participant_id)
+        if survey_check['success'] and survey_check['issue']:
+            issue = survey_check['issue']
+            issue_id = issue['issue_id']
+            st.session_state['survey_responses']['issue_id'] = issue_id
+            st.session_state['survey_responses']['issue_url'] = issue.get('issue_url', '')
+            st.session_state['survey_responses']['current_issue_using_ai'] = survey_check.get('using_ai', False)
+            print(f"DEBUG: Recovered issue_id {issue_id} from database for post-issue questions")
+        else:
+            # No issue needing survey, redirect to completion page
+            print("DEBUG: No issue needing survey, redirecting to completion page")
+            st.session_state['page'] = 16
+            st.rerun()
+            return
 
     # Check if participant has already completed post-issue questions
     if participant_id and issue_id:

@@ -21,7 +21,6 @@ from pages import (
     issue_completion_page,
 
     # Post-PR pages
-    ai_condition_questions_page,
     post_issue_questions_page,
     post_issue_reflection_page,
 
@@ -90,7 +89,7 @@ def main():
         10: issue_completion_page,           # Issue completion & PR submission
 
         # Post-PR section
-        11: ai_condition_questions_page,     # AI condition questions (AI users only)
+        11: post_issue_questions_page,       # Alias to post-issue questions (AI page removed)
         12: post_issue_questions_page,       # Post-issue experience questions (all users) + interview audio
         13: post_issue_reflection_page,      # Post-issue reflection (satisfaction, confidence, difficulty)
 
