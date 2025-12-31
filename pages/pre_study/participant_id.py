@@ -77,10 +77,10 @@ def participant_id_page():
                     # to ensure we load the correct next incomplete issue, not just the first issue
 
                     # Debug output
-                    print(f"DEBUG: Progress data: {progress}")
-                    print(f"DEBUG: pre_study_completed = {progress['pre_study_completed']}")
-                    print(f"DEBUG: issue_assigned = {progress['issue_assigned']}")
-                    print(f"DEBUG: issue_completed = {progress['issue_completed']}")
+                    # print(f"DEBUG: Progress data: {progress}")
+                    # print(f"DEBUG: pre_study_completed = {progress['pre_study_completed']}")
+                    # print(f"DEBUG: issue_assigned = {progress['issue_assigned']}")
+                    # print(f"DEBUG: issue_completed = {progress['issue_completed']}")
                     
                     # Route based on progress - CHECK PRE-STUDY FIRST
                     checklist_completed = progress.get('checklist_completed', False)
