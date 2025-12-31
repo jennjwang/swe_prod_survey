@@ -81,11 +81,7 @@ def participant_id_page():
                     print(f"DEBUG: pre_study_completed = {progress['pre_study_completed']}")
                     print(f"DEBUG: issue_assigned = {progress['issue_assigned']}")
                     print(f"DEBUG: issue_completed = {progress['issue_completed']}")
-                    # Surface key progress signals in the Streamlit logs for visibility
-                    st.write(f"DEBUG: pre_study_completed = {progress['pre_study_completed']}")
-                    st.write(f"DEBUG: issue_assigned = {progress['issue_assigned']}")
-                    st.write(f"DEBUG: issue_completed = {progress['issue_completed']}")
-
+                    
                     # Route based on progress - CHECK PRE-STUDY FIRST
                     checklist_completed = progress.get('checklist_completed', False)
 
@@ -125,15 +121,13 @@ def participant_id_page():
                                 # Route to the correct post-PR page
                                 if nasa_tlx_1 is None:
                                     print(f"DEBUG: Issue {issue_id} NASA-TLX not done, redirecting to page 12")
-                                st.session_state['page'] = 12  # post_issue_questions_page
-                            elif using_ai and ai_code_quality is None:
-                                print(f"DEBUG: Issue {issue_id} AI reflection not done, redirecting to page 13")
-                                st.write(f"DEBUG: Issue {issue_id} AI reflection not done, redirecting to page 13")
-                                st.session_state['page'] = 13  # post_issue_reflection_page
-                            else:
-                                print(f"DEBUG: Issue {issue_id} survey done except reflection, redirecting to page 13")
-                                st.write(f"DEBUG: Issue {issue_id} survey done except reflection, redirecting to page 13")
-                                st.session_state['page'] = 13  # post_issue_reflection_page
+                                    st.session_state['page'] = 12  # post_issue_questions_page
+                                elif using_ai and ai_code_quality is None:
+                                    print(f"DEBUG: Issue {issue_id} AI reflection not done, redirecting to page 13")
+                                    st.session_state['page'] = 13  # post_issue_reflection_page
+                                else:
+                                    print(f"DEBUG: Issue {issue_id} survey done except reflection, redirecting to page 13")
+                                    st.session_state['page'] = 13  # post_issue_reflection_page
                                 st.rerun()
 
                             # All required issues completed, check if there are reviewed PRs needing updates
