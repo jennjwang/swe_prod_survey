@@ -80,13 +80,13 @@ def issue_assignment_page():
             st.success("**You MAY use AI tools for this issue.**")
             st.markdown("""
                 <p style='font-size:18px; margin-top: 1rem; margin-bottom: 1rem;'>
-                You are <strong>encouraged</strong> to use AI assistants to help you complete this task, including:
+                You are <strong>encouraged</strong> to use the following AI coding tools to help you complete this task:
                 </p>
                 <ul style='font-size:16px; margin-left: 2rem;'>
-                    <li>ChatGPT, Claude, Gemini, or similar AI chatbots</li>
-                    <li>GitHub Copilot, Cursor, or similar AI code assistants</li>
-                    <li>Any other AI-powered development tools</li>
+                    <li>Claude Code</li>
+                    <li>Cursor</li>
                 </ul>
+                You should not use any other AI tools for this task, including ChatGPT, Gemini, or similar AI chatbots.
                 """, unsafe_allow_html=True)
         else:
             st.warning("**You should NOT use AI tools for this issue.**")
