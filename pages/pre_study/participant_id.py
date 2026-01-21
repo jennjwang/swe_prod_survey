@@ -77,7 +77,7 @@ def participant_id_page():
                     # to ensure we load the correct next incomplete issue, not just the first issue
 
                     # Debug output
-                    # print(f"DEBUG: Progress data: {progress}")
+                    print(f"DEBUG: Progress data: {progress}")
                     # print(f"DEBUG: pre_study_completed = {progress['pre_study_completed']}")
                     # print(f"DEBUG: issue_assigned = {progress['issue_assigned']}")
                     # print(f"DEBUG: issue_completed = {progress['issue_completed']}")
@@ -138,7 +138,14 @@ def participant_id_page():
                             supabase_client = get_supabase_client()
 
                             try:
-                                # Check for reviewed PRs (is_reviewed = True)
+                                # Check total assigned issues
+                                assigned_result = supabase_client.table('repo-issues')\
+                                    .select('issue_id')\
+                                    .eq('participant_id', participant_id)\
+                                    .execute()
+                                total_assigned = len(assigned_result.data) if assigned_result.data else 0
+
+                                # Check for merged/closed PRs
                                 reviewed_result = supabase_client.table('repo-issues')\
                                     .select('issue_id')\
                                     .eq('participant_id', participant_id)\
@@ -158,10 +165,12 @@ def participant_id_page():
                                 # Check if there are reviewed PRs that haven't had surveys completed
                                 has_pending_pr_surveys = len(reviewed_issue_ids - completed_survey_ids) > 0
                                 total_reviewed_prs = len(reviewed_issue_ids)
-                                all_pr_surveys_complete = total_reviewed_prs > 0 and len(completed_survey_ids) >= total_reviewed_prs
+                                # All PRs complete only if ALL assigned issues are merged/closed AND all surveys done
+                                all_prs_closed = total_assigned > 0 and total_reviewed_prs >= total_assigned
+                                all_pr_surveys_complete = all_prs_closed and len(completed_survey_ids) >= total_reviewed_prs
 
-                                print(f"DEBUG: Reviewed PRs: {reviewed_issue_ids}, Completed surveys: {completed_survey_ids}")
-                                print(f"DEBUG: Total reviewed PRs: {total_reviewed_prs}, All surveys complete: {all_pr_surveys_complete}")
+                                print(f"DEBUG: Total assigned: {total_assigned}, Reviewed PRs: {reviewed_issue_ids}, Completed surveys: {completed_survey_ids}")
+                                print(f"DEBUG: Total reviewed PRs: {total_reviewed_prs}, All PRs closed: {all_prs_closed}, All surveys complete: {all_pr_surveys_complete}")
 
                                 if has_pending_pr_surveys:
                                     # Has reviewed PRs needing updates, route to update page

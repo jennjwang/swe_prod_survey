@@ -16,14 +16,20 @@ def pr_closed_thank_you_page():
 
     if supabase_client and participant_id:
         try:
-            # Get total number of assigned issues that are merged or closed
-            assigned_issues = supabase_client.table('repo-issues')\
+            # Get total number of assigned issues
+            all_assigned = supabase_client.table('repo-issues')\
+                .select('issue_id')\
+                .eq('participant_id', participant_id)\
+                .execute()
+            total_assigned = len(all_assigned.data) if all_assigned.data else 0
+
+            # Get number of merged or closed issues
+            closed_issues = supabase_client.table('repo-issues')\
                 .select('issue_id')\
                 .eq('participant_id', participant_id)\
                 .or_('is_merged.eq.true,is_closed.eq.true')\
                 .execute()
-            
-            total_issues = len(assigned_issues.data) if assigned_issues.data else 0
+            total_closed = len(closed_issues.data) if closed_issues.data else 0
 
             # Get number of completed pr-closed surveys (where learn_4 is not null)
             completed_surveys = supabase_client.table('pr-closed')\
@@ -34,8 +40,15 @@ def pr_closed_thank_you_page():
 
             completed_count = len(completed_surveys.data) if completed_surveys.data else 0
 
+            # All complete only if ALL assigned issues are merged/closed AND all surveys done
+            all_prs_closed = total_assigned > 0 and total_closed >= total_assigned
+            all_surveys_complete = all_prs_closed and completed_count >= total_closed
+
+            print(f"DEBUG pr_closed_thank_you: Total assigned: {total_assigned}, Total closed: {total_closed}, Surveys completed: {completed_count}")
+            print(f"DEBUG pr_closed_thank_you: All PRs closed: {all_prs_closed}, All surveys complete: {all_surveys_complete}")
+
             # If all surveys are complete, route to end of study questions
-            if total_issues > 0 and completed_count >= total_issues:
+            if all_surveys_complete:
                 # Check if post-study survey is already complete
                 existing = supabase_client.table('post-study')\
                     .select('participant_id, ai_responsibility, value_reading_issue')\

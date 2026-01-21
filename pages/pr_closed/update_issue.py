@@ -53,6 +53,13 @@ def update_issue_page():
         return
 
     try:
+        # Fetch total assigned issues for this participant
+        assigned_result = supabase_client.table('repo-issues')\
+            .select('issue_id')\
+            .eq('participant_id', participant_id)\
+            .execute()
+        total_assigned = len(assigned_result.data) if assigned_result.data else 0
+
         # Fetch issues that are either merged or closed
         result = supabase_client.table('repo-issues')\
             .select('*')\
@@ -78,9 +85,12 @@ def update_issue_page():
         # Check if all PRs are closed and all pr_closed surveys are done
         total_reviewed_prs = len(all_completed_issues)
         total_completed_surveys = len(completed_survey_issue_ids)
-        all_pr_surveys_complete = total_reviewed_prs > 0 and total_completed_surveys >= total_reviewed_prs
+        # All PRs complete only if ALL assigned issues are merged/closed AND all surveys done
+        all_prs_closed = total_assigned > 0 and total_reviewed_prs >= total_assigned
+        all_pr_surveys_complete = all_prs_closed and total_completed_surveys >= total_reviewed_prs
 
-        print(f'DEBUG: Total reviewed PRs: {total_reviewed_prs}, Total completed surveys: {total_completed_surveys}, All surveys complete: {all_pr_surveys_complete}')
+        print(f'DEBUG: Total assigned: {total_assigned}, Total reviewed PRs: {total_reviewed_prs}, Total completed surveys: {total_completed_surveys}')
+        print(f'DEBUG: All PRs closed: {all_prs_closed}, All surveys complete: {all_pr_surveys_complete}')
 
         # If all PRs are closed and all pr_closed surveys are filled, route to end of study questions
         if all_pr_surveys_complete:

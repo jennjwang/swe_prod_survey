@@ -214,6 +214,36 @@ def code_activities_value_page():
         # Clear pr_closed session state
         st.session_state.pop('pr_closed_selected_issue', None)
 
+        # Check that all issues have been merged or closed before routing to final thank you
+        supabase_client = get_supabase_client()
+        if supabase_client and participant_id:
+            try:
+                # Get total assigned issues
+                assigned_result = supabase_client.table('repo-issues')\
+                    .select('issue_id', count='exact')\
+                    .eq('participant_id', participant_id)\
+                    .execute()
+                total_assigned = assigned_result.count if assigned_result.count is not None else (len(assigned_result.data) if assigned_result.data else 0)
+
+                # Get merged or closed issues
+                closed_result = supabase_client.table('repo-issues')\
+                    .select('issue_id', count='exact')\
+                    .eq('participant_id', participant_id)\
+                    .or_('is_merged.eq.true,is_closed.eq.true')\
+                    .execute()
+                total_closed = closed_result.count if closed_result.count is not None else (len(closed_result.data) if closed_result.data else 0)
+
+                if total_assigned > 0 and total_closed < total_assigned:
+                    # Not all issues are merged/closed yet
+                    st.warning(f"⚠️ {total_closed} of {total_assigned} issues have been merged or closed. Please wait for all issues to be merged or closed before completing the study.")
+                    st.session_state['page'] = 10  # Back to issue completion page
+                    st.rerun()
+                    return
+            except Exception as e:
+                print(f"Error checking merged/closed status: {e}")
+                # On error, still route to final thank you
+                pass
+
         # Navigate to final thank you page
         st.session_state['page'] = 26  # Final thank you page
         st.rerun()
