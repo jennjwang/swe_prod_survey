@@ -204,10 +204,48 @@ def participant_id_page():
                                         st.session_state['page'] = 25
                                         st.rerun()
                                 else:
-                                    # All surveys complete or no reviewed PRs yet, go to thank you page
-                                    print("DEBUG: All surveys complete or no reviewed PRs, routing to thank you")
-                                    st.session_state['page'] = 17  # Thank you page (all issues complete)
-                                    st.rerun()
+                                    # All surveys complete or no reviewed PRs yet, check post-exp1 completion
+                                    print("DEBUG: All surveys complete or no reviewed PRs, checking post-exp1 status")
+                                    try:
+                                        post_exp1_result = supabase_client.table('post-exp1')\
+                                            .select('workflow_comparison, ai_helpful_tasks, ai_wish_different, ai_suggestion_decisions')\
+                                            .eq('participant_id', participant_id)\
+                                            .execute()
+
+                                        if post_exp1_result.data and len(post_exp1_result.data) > 0:
+                                            post_exp1_data = post_exp1_result.data[0]
+                                            workflow_comparison = post_exp1_data.get('workflow_comparison')
+                                            ai_helpful_tasks = post_exp1_data.get('ai_helpful_tasks')
+                                            ai_wish_different = post_exp1_data.get('ai_wish_different')
+                                            ai_suggestion_decisions = post_exp1_data.get('ai_suggestion_decisions')
+
+                                            # Check if workflow_comparison is missing -> route to page 14
+                                            if not workflow_comparison or not str(workflow_comparison).strip():
+                                                print("DEBUG: Post-exp1 workflow_comparison missing, routing to page 14")
+                                                st.session_state['page'] = 14  # study_val_page
+                                                st.rerun()
+                                            # Check if any AI usage fields are missing -> route to page 15
+                                            elif (not ai_helpful_tasks or not str(ai_helpful_tasks).strip() or
+                                                  not ai_wish_different or not str(ai_wish_different).strip() or
+                                                  not ai_suggestion_decisions or not str(ai_suggestion_decisions).strip()):
+                                                print("DEBUG: Post-exp1 AI usage fields missing, routing to page 15")
+                                                st.session_state['page'] = 15  # ai_usage_page
+                                                st.rerun()
+                                            else:
+                                                # All post-exp1 complete, go to thank you page
+                                                print("DEBUG: Post-exp1 complete, routing to thank you page")
+                                                st.session_state['page'] = 17  # Thank you page
+                                                st.rerun()
+                                        else:
+                                            # No post-exp1 record, route to page 14
+                                            print("DEBUG: No post-exp1 record, routing to page 14")
+                                            st.session_state['page'] = 14  # study_val_page
+                                            st.rerun()
+                                    except Exception as e:
+                                        print(f"Error checking post-exp1 status: {e}")
+                                        # On error, default to thank you page
+                                        st.session_state['page'] = 17
+                                        st.rerun()
                             except Exception as e:
                                 print(f"Error checking for reviewed PRs: {e}")
                                 # On error, default to thank you page
