@@ -99,6 +99,8 @@ def completion_page():
             col1, col2 = st.columns([1, 1])
             with col1:
                 if st.button("Continue to Next Issue", key="completion_continue", type="primary", use_container_width=True):
+                    from survey_utils import clear_form_cache_between_issues
+                    clear_form_cache_between_issues()
                     st.session_state['page'] = 8  # Issue assignment page
                     st.rerun()
         else:
@@ -126,6 +128,8 @@ def completion_page():
             # Continue button - left aligned at the end
             st.markdown("<div style='margin-top: 2rem;'></div>", unsafe_allow_html=True)
             if st.button("Continue", key="completion_continue", type="primary"):
+                from survey_utils import clear_form_cache_between_issues
+                clear_form_cache_between_issues()
                 # Check if post-exp1 completed
                 if not post_exp1_completed:
                     # Go to study validation questions first

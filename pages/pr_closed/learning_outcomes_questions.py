@@ -209,6 +209,9 @@ def learning_outcomes_questions_page():
             st.session_state.pop('pr_closed_feedback', None)
             st.session_state.pop('pr_closed_learning', None)
 
+            from survey_utils import clear_form_cache_between_issues
+            clear_form_cache_between_issues()
+
             # Show success message and redirect to PR closed thank you page
             st.success("Thank you! Your responses have been saved successfully.")
             st.session_state['page'] = 23  # Redirect to PR closed thank you page

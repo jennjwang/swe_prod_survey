@@ -113,47 +113,79 @@ def issue_completion_page():
             st.subheader("Upload Required Data")
             st.write("Please review your data to exclude any sensitive information before submitting.")
 
+            # File size limit (MB) – must match .streamlit/config.toml maxUploadSize
+            max_file_size_mb = 500
+            max_file_size_bytes = max_file_size_mb * 1024 * 1024
+
             st.markdown("**1. SpecStory Folder**")
-            st.caption("Upload a zipped copy of your `.specstory` folder from the assigned repository.")
+            st.caption("Upload a zipped copy of your `.specstory` folder from the assigned repository. **Maximum %d MB per file.**" % max_file_size_mb)
             specstory_upload = st.file_uploader(
                 "Upload .specstory folder (zipped)",
                 type=['zip'],
                 key="specstory_upload",
                 label_visibility="collapsed"
             )
+            if specstory_upload and specstory_upload.size is not None:
+                st.caption(f"Selected: {specstory_upload.name} — {specstory_upload.size / (1024*1024):.1f} MB")
 
             st.markdown("")
             st.markdown("**2. Screen Recorder Data**")
-            st.caption("Upload a zipped copy of the `/data` folder from your screen recorder directory.")
-            st.info("**Large files (>1GB):** If your recording is too large, please use [this Google Form](https://forms.gle/92Juk68xzjkC7vxg8) instead.")
+            st.caption("Upload a zipped copy of the `/data` folder from your screen recorder directory. **Maximum %d MB per file.**" % max_file_size_mb)
+            st.warning("**Large files (>500MB):** If your recording is too large, please use [this Google Form](https://forms.gle/92Juk68xzjkC7vxg8) instead.")
             screenrec_upload = st.file_uploader(
                 "Upload screen recorder /data folder (zipped)",
                 type=['zip'],
                 key="screenrec_upload",
                 label_visibility="collapsed"
             )
+            if screenrec_upload and screenrec_upload.size is not None:
+                st.caption(f"Selected: {screenrec_upload.name} — {screenrec_upload.size / (1024*1024):.1f} MB")
 
-            submit_button = st.button(
-                "Submit Completion",
-                key="submit_completion",
-                type="primary"
-            )
+            # Block submit when any file is over the limit (or size unknown)
+            def _over_limit(upload):
+                return upload and (upload.size is None or upload.size > max_file_size_bytes)
+            specstory_over = _over_limit(specstory_upload)
+            screenrec_over = _over_limit(screenrec_upload)
+            if specstory_over:
+                size_mb = f"{specstory_upload.size / (1024*1024):.0f} MB" if specstory_upload.size is not None else "unknown size"
+                st.error(f"⚠️ SpecStory file is too large ({size_mb}). Please keep uploads under {max_file_size_mb} MB or use the Google Form for larger files.")
+            if screenrec_over:
+                size_mb = f"{screenrec_upload.size / (1024*1024):.0f} MB" if screenrec_upload.size is not None else "unknown size"
+                st.error(f"⚠️ Screen recorder file is too large ({size_mb}). Please keep uploads under {max_file_size_mb} MB or use the Google Form for larger files.")
+            any_over = specstory_over or screenrec_over
 
-
-            # st.markdown("<div style='margin-top: 4rem;'></div>", unsafe_allow_html=True)
+            submit_button = False
+            if not any_over:
+                submit_button = st.button(
+                    "Submit Completion",
+                    key="submit_completion",
+                    type="primary",
+                )
 
             if submit_button:
                 # Basic validations
                 if not pr_url or not pr_url.strip():
                     st.error("⚠️ Please enter a pull request URL.")
                     return
-                # if not is_valid_pr_url(pr_url):
-                #     st.error("⚠️ Please enter a valid GitHub pull request URL (e.g., https://github.com/owner/repo/pull/123)")
-                #     return
                 if not issue_id:
                     st.error("Issue ID not found. Please contact the study administrator.")
                     return
-                # Upload files to Drive if provided
+                # Re-validate file size at submit time (must block here; UI state can be stale)
+                if specstory_upload and (specstory_upload.size is None or specstory_upload.size > max_file_size_bytes):
+                    st.error(f"⚠️ SpecStory file is too large or could not be checked. Please keep uploads under {max_file_size_mb} MB or use the Google Form for larger files.")
+                    return
+                if screenrec_upload and (screenrec_upload.size is None or screenrec_upload.size > max_file_size_bytes):
+                    st.error(f"⚠️ Screen recorder file is too large or could not be checked. Please keep uploads under {max_file_size_mb} MB or use the Google Form for larger files.")
+                    return
+                # Upload files to Drive only if both pass size check (no submission of large files)
+                def _ok_to_upload(upload):
+                    return upload and upload.size is not None and upload.size <= max_file_size_bytes
+                if not _ok_to_upload(specstory_upload) and specstory_upload:
+                    st.error(f"⚠️ SpecStory file is too large. Submission not allowed. Please keep uploads under {max_file_size_mb} MB or use the Google Form.")
+                    return
+                if not _ok_to_upload(screenrec_upload) and screenrec_upload:
+                    st.error(f"⚠️ Screen recorder file is too large. Submission not allowed. Please keep uploads under {max_file_size_mb} MB or use the Google Form.")
+                    return
                 try:
                     from .drive_upload import upload_to_drive_in_subfolders, sanitize_filename
                     folder_id = st.secrets.get('GDRIVE_FOLDER_ID', '')
@@ -162,16 +194,14 @@ def issue_completion_page():
                             participant_folder = sanitize_filename(participant_id) if participant_id else "unknown_participant"
                             issue_folder = f"issue_{issue_id}"
                             subfolders = [participant_folder, issue_folder]
-                            # Upload SpecStory zip if provided
-                            if specstory_upload:
+                            if specstory_upload and _ok_to_upload(specstory_upload):
                                 upload_to_drive_in_subfolders(
                                     specstory_upload,
                                     folder_id,
                                     subfolders=subfolders,
                                     filename=specstory_upload.name,
                                 )
-                            # Upload screen recorder zip if provided
-                            if screenrec_upload:
+                            if screenrec_upload and _ok_to_upload(screenrec_upload):
                                 upload_to_drive_in_subfolders(
                                     screenrec_upload,
                                     folder_id,
@@ -204,6 +234,8 @@ def issue_completion_page():
                         # Go to post-issue questions (AI reflection handled there)
                         st.session_state['page'] = 12
 
+                    from survey_utils import clear_form_cache_between_issues
+                    clear_form_cache_between_issues()
                     st.rerun()
                 else:
                     st.error(f"Error recording completion: {result['error']}")
@@ -325,5 +357,7 @@ def issue_completion_page():
     you can update the status of a previous PR here and submit your screen recorder data.
     """)
     if st.button("Update PR"):
+        from survey_utils import clear_form_cache_between_issues
+        clear_form_cache_between_issues()
         st.session_state['page'] = 18  # PR closed update page
         st.rerun()

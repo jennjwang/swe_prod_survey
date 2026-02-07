@@ -177,39 +177,73 @@ def update_issue_page():
     st.subheader("Upload Required Data")
     st.write("Please review your data to exclude any sensitive information before submitting.")
 
+    # File size limit (MB) – must match .streamlit/config.toml maxUploadSize
+    max_file_size_mb = 500
+    max_file_size_bytes = max_file_size_mb * 1024 * 1024
+
     st.markdown("**1. SpecStory Folder**")
-    st.caption("Upload a zipped copy of your `.specstory` folder from the assigned repository.")
+    st.caption("Upload a zipped copy of your `.specstory` folder from the assigned repository. **Maximum %d MB per file.**" % max_file_size_mb)
     specstory_upload = st.file_uploader(
         "Upload .specstory folder (zipped)",
         type=['zip'],
         key="specstory_upload",
         label_visibility="collapsed"
     )
+    if specstory_upload and specstory_upload.size is not None:
+        st.caption(f"Selected: {specstory_upload.name} — {specstory_upload.size / (1024*1024):.1f} MB")
 
     st.markdown("")
     st.markdown("**2. Screen Recorder Data**")
-    st.caption("Upload a zipped copy of the `/data` folder from your screen recorder directory.")
-    st.info("**Large files (>1GB):** If your recording is too large, please use **[this Google Form](https://forms.gle/GmcmX9kyTsQPXGMA9)** instead.")
+    st.caption("Upload a zipped copy of the `/data` folder from your screen recorder directory. **Maximum %d MB per file.**" % max_file_size_mb)
+    st.warning("**Large files (>500MB):** If your recording is too large, please use **[this Google Form](https://forms.gle/GmcmX9kyTsQPXGMA9)** instead.")
     screenrec_upload = st.file_uploader(
         "Upload screen recorder /data folder (zipped)",
         type=['zip'],
         key="screenrec_upload",
         label_visibility="collapsed"
     )
+    if screenrec_upload and screenrec_upload.size is not None:
+        st.caption(f"Selected: {screenrec_upload.name} — {screenrec_upload.size / (1024*1024):.1f} MB")
 
-    submit_button = st.button(
-        "Submit Data",
-        key="submit_update",
-        type="primary"
-    )
+    # Block submit when any file is over the limit (or size unknown)
+    def _over_limit(upload):
+        return upload and (upload.size is None or upload.size > max_file_size_bytes)
+    specstory_over = _over_limit(specstory_upload)
+    screenrec_over = _over_limit(screenrec_upload)
+    if specstory_over:
+        size_mb = f"{specstory_upload.size / (1024*1024):.0f} MB" if specstory_upload.size is not None else "unknown size"
+        st.error(f"⚠️ SpecStory file is too large ({size_mb}). Please keep uploads under {max_file_size_mb} MB or use the Google Form for larger files.")
+    if screenrec_over:
+        size_mb = f"{screenrec_upload.size / (1024*1024):.0f} MB" if screenrec_upload.size is not None else "unknown size"
+        st.error(f"⚠️ Screen recorder file is too large ({size_mb}). Please keep uploads under {max_file_size_mb} MB or use the Google Form for larger files.")
+    any_over = specstory_over or screenrec_over
+
+    submit_button = False
+    if not any_over:
+        submit_button = st.button(
+            "Submit Data",
+            key="submit_update",
+            type="primary",
+        )
 
     if submit_button:
         # Validate that at least one file is uploaded
         if not specstory_upload and not screenrec_upload:
             st.error("Please upload at least one file (SpecStory folder or Screen Recorder data).")
-            # return
+            return
 
-        # Upload files to Drive
+        # Re-validate file size at submit time — do not allow submission of large files
+        if specstory_upload and (specstory_upload.size is None or specstory_upload.size > max_file_size_bytes):
+            st.error(f"⚠️ SpecStory file is too large. Submission not allowed. Please keep uploads under {max_file_size_mb} MB or use the Google Form for larger files.")
+            return
+        if screenrec_upload and (screenrec_upload.size is None or screenrec_upload.size > max_file_size_bytes):
+            st.error(f"⚠️ Screen recorder file is too large. Submission not allowed. Please keep uploads under {max_file_size_mb} MB or use the Google Form for larger files.")
+            return
+
+        def _ok_to_upload(upload):
+            return upload and upload.size is not None and upload.size <= max_file_size_bytes
+
+        # Upload files to Drive only when size is valid (never submit large files)
         try:
             from pages.task.drive_upload import upload_to_drive_in_subfolders, sanitize_filename
             folder_id = st.secrets.get('GDRIVE_FOLDER_ID', '')
@@ -223,8 +257,7 @@ def update_issue_page():
                 issue_folder = f"issue_{selected_issue_id}_update"
                 subfolders = [participant_folder, issue_folder]
 
-                # Upload SpecStory zip if provided
-                if specstory_upload:
+                if specstory_upload and _ok_to_upload(specstory_upload):
                     upload_to_drive_in_subfolders(
                         specstory_upload,
                         folder_id,
@@ -232,8 +265,7 @@ def update_issue_page():
                         filename=specstory_upload.name,
                     )
 
-                # Upload screen recorder zip if provided
-                if screenrec_upload:
+                if screenrec_upload and _ok_to_upload(screenrec_upload):
                     upload_to_drive_in_subfolders(
                         screenrec_upload,
                         folder_id,
@@ -246,9 +278,9 @@ def update_issue_page():
             # Store selected issue in session state for subsequent pages
             st.session_state['pr_closed_selected_issue'] = selected_pr
 
-            # Clear file uploads
-            st.session_state.pop('specstory_upload', None)
-            st.session_state.pop('screenrec_upload', None)
+            # Clear form cache before transitioning to next issue/survey
+            from survey_utils import clear_form_cache_between_issues
+            clear_form_cache_between_issues()
 
             # Navigate to collaboration questions
             st.session_state['page'] = 19  # collaboration_questions_page
@@ -264,6 +296,8 @@ def update_issue_page():
     col1, col2, col3 = st.columns([1, 1.5, 1])
     with col1:
         if st.button("Back to Issue Status"):
+            from survey_utils import clear_form_cache_between_issues
+            clear_form_cache_between_issues()
             st.session_state['page'] = 10  # Return to issue completion page
             st.rerun()
 
@@ -304,4 +338,6 @@ def update_issue_page():
                 # Default to collaboration questions if error
                 st.session_state['page'] = 19
 
+            from survey_utils import clear_form_cache_between_issues
+            clear_form_cache_between_issues()
             st.rerun()

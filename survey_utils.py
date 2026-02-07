@@ -4,6 +4,7 @@ Utility functions for the survey application.
 
 import io
 import wave
+
 import streamlit as st
 import openai
 
@@ -22,6 +23,25 @@ def previous_page():
     """Navigate to the previous page."""
     st.session_state['page'] -= 1
     st.rerun()
+
+
+def clear_form_cache_between_issues():
+    """
+    Clear form/widget state and app cache when transitioning between issues.
+    Call this before st.rerun() after form submission so the next issue sees a fresh form.
+    """
+    form_keys = [
+        'completion_choice',
+        'specstory_upload',
+        'screenrec_upload',
+        'selected_update_pr_index',
+    ]
+    for key in form_keys:
+        st.session_state.pop(key, None)
+    try:
+        st.cache_data.clear()
+    except Exception:
+        pass
 
 
 def get_audio_duration(file):

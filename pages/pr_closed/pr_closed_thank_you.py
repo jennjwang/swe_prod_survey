@@ -81,11 +81,15 @@ def pr_closed_thank_you_page():
 
     with col1:
         if st.button("Back to Issue Status", type="secondary", use_container_width=True):
+            from survey_utils import clear_form_cache_between_issues
+            clear_form_cache_between_issues()
             st.session_state['page'] = 10  # Back to issue completion page
             st.rerun()
 
     with col2:
         if st.button("Update Another PR", type="secondary", use_container_width=True):
+            from survey_utils import clear_form_cache_between_issues
+            clear_form_cache_between_issues()
             st.session_state['page'] = 18  # Back to update issue page
             st.rerun()
 

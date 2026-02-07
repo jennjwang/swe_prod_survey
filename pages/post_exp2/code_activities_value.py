@@ -236,6 +236,8 @@ def code_activities_value_page():
                 if total_assigned > 0 and total_closed < total_assigned:
                     # Not all issues are merged/closed yet
                     st.warning(f"⚠️ {total_closed} of {total_assigned} issues have been merged or closed. Please wait for all issues to be merged or closed before completing the study.")
+                    from survey_utils import clear_form_cache_between_issues
+                    clear_form_cache_between_issues()
                     st.session_state['page'] = 10  # Back to issue completion page
                     st.rerun()
                     return
@@ -245,6 +247,8 @@ def code_activities_value_page():
                 pass
 
         # Navigate to final thank you page
+        from survey_utils import clear_form_cache_between_issues
+        clear_form_cache_between_issues()
         st.session_state['page'] = 26  # Final thank you page
         st.rerun()
 
