@@ -168,10 +168,14 @@ def validate_participant_id(participant_id: str):
         response = supabase_client.table('participant-repos').select('participant_id').ilike('participant_id', participant_id_lower).execute()
         
         if response.data and len(response.data) > 0:
-            print(f"Participant ID '{participant_id}' validated successfully")
+            # Return the participant_id as stored in DB so all subsequent
+            # case-sensitive .eq() queries match exactly
+            db_participant_id = response.data[0].get('participant_id', participant_id)
+            print(f"Participant ID '{participant_id}' validated successfully (DB value: '{db_participant_id}')")
             return {
                 'valid': True,
-                'error': None
+                'error': None,
+                'participant_id': db_participant_id,
             }
         else:
             print(f"Participant ID '{participant_id}' not found in database")
@@ -228,11 +232,11 @@ def save_survey_responses(participant_id: str, responses: dict):
     print(f"Prepared data for participant {participant_id}: {data}")
     
     # Check if participant already has responses
-    existing = supabase_client.table('pre-study').select('participant_id').eq('participant_id', participant_id).execute()
+    existing = supabase_client.table('pre-study').select('participant_id').ilike('participant_id', participant_id).execute()
     
     if existing.data and len(existing.data) > 0:
         # Update existing record
-        supabase_client.table('pre-study').update(data).eq('participant_id', participant_id).execute()
+        supabase_client.table('pre-study').update(data).ilike('participant_id', participant_id).execute()
         print(f"Updated responses for participant: {participant_id}")
     else:
         # Insert new record
@@ -290,11 +294,11 @@ def get_participant_progress(participant_id: str):
     Returns:
         dict with 'success', 'progress' (dict with status info), and 'error' keys
     """
-    # Check pre-study completion
-    pre_study = supabase_client.table('pre-study').select('*').eq('participant_id', participant_id).execute()
+    # Check pre-study completion (case-insensitive)
+    pre_study = supabase_client.table('pre-study').select('*').ilike('participant_id', participant_id).execute()
 
-    # Check if issue assigned
-    issue = supabase_client.table('repo-issues').select('*').eq('participant_id', participant_id).execute()
+    # Check if issue assigned (case-insensitive)
+    issue = supabase_client.table('repo-issues').select('*').ilike('participant_id', participant_id).execute()
 
     # Check if issue is completed
     issue_completed = False
@@ -308,7 +312,7 @@ def get_participant_progress(participant_id: str):
 
         # Check post-PR table for survey completion
         if issue_completed and issue_id:
-            post_pr = supabase_client.table('post-PR').select('nasa_tlx_1, ai_code_quality').eq('participant_id', participant_id).eq('issue_id', int(issue_id)).execute()
+            post_pr = supabase_client.table('post-PR').select('nasa_tlx_1, ai_code_quality').ilike('participant_id', participant_id).eq('issue_id', int(issue_id)).execute()
             if post_pr.data and len(post_pr.data) > 0:
                 nasa_tlx_1 = post_pr.data[0].get('nasa_tlx_1')
                 ai_code_quality = post_pr.data[0].get('ai_code_quality')
@@ -407,7 +411,7 @@ def assign_issue_to_participant(participant_id: str, issue_id: int):
     print(f"=== STARTING ISSUE ASSIGNMENT ===")
 
     # Check how many issues this participant already has
-    existing_issues = supabase_client.table('repo-issues').select('using_ai').eq('participant_id', participant_id).execute()
+    existing_issues = supabase_client.table('repo-issues').select('using_ai').ilike('participant_id', participant_id).execute()
     total_count = len(existing_issues.data) if existing_issues.data else 0
 
     print(f"Participant {participant_id} currently has {total_count} assigned issues")
@@ -495,7 +499,7 @@ def assign_all_issues_to_participant(participant_id: str, repository: str):
     available_count = len(available_issues)
 
     if available_count == 0:
-        error_msg = "No unassigned issues available for this repository."
+        error_msg = f"No unassigned issues available for repository '{repo_name}'."
         print(f"⚠️ {error_msg}")
         return {
             'success': False,
@@ -595,10 +599,11 @@ def check_all_issues_assigned(participant_id: str):
     """
     result = supabase_client.table('repo-issues')\
         .select('issue_id', count='exact')\
-        .eq('participant_id', participant_id)\
+        .ilike('participant_id', participant_id)\
         .execute()
 
-    count = result.count if hasattr(result, 'count') else (len(result.data) if result.data else 0)
+    # Prefer result.count but fall back to len(result.data) if count is None
+    count = result.count if (hasattr(result, 'count') and result.count is not None) else (len(result.data) if result.data else 0)
 
     print(f"Participant {participant_id} has {count} issues assigned (requires {REQUIRED_ISSUE_COUNT})")
 
@@ -620,10 +625,10 @@ def get_next_issue_in_sequence(participant_id: str):
     Returns:
         dict with 'success', 'issue', 'sequence', 'total_completed', 'total_assigned' keys
     """
-    # Get all issues for participant ordered by sequence
+    # Get all issues for participant ordered by sequence (case-insensitive match)
     result = supabase_client.table('repo-issues')\
         .select('*')\
-        .eq('participant_id', participant_id)\
+        .ilike('participant_id', participant_id)\
         .order('issue_sequence')\
         .execute()
 
@@ -705,7 +710,7 @@ def request_different_issue(participant_id: str, current_issue_id: int, justific
     # Check if participant has already used their swap
     result = supabase_client.table('pre-study')\
         .select('issue_swap_used')\
-        .eq('participant_id', participant_id)\
+        .ilike('participant_id', participant_id)\
         .execute()
 
     if result.data and len(result.data) > 0:
@@ -789,7 +794,7 @@ def request_different_issue(participant_id: str, current_issue_id: int, justific
     # Mark swap as used in pre-study table
     supabase_client.table('pre-study').update({
         'issue_swap_used': True
-    }).eq('participant_id', participant_id).execute()
+    }).ilike('participant_id', participant_id).execute()
 
     print(f"Issue swap successful: {current_issue_id} -> {new_issue_id}")
 
@@ -989,14 +994,14 @@ def check_pr_survey_completion(participant_id: str, issue_id: int):
         dict with 'success', 'completed', 'using_ai', 'nasa_tlx_1', 'ai_code_quality', and 'error' keys
     """
     # Check AI condition from repo-issues table
-    repo_result = supabase_client.table('repo-issues').select('using_ai').eq('participant_id', participant_id).eq('issue_id', int(issue_id)).execute()
+    repo_result = supabase_client.table('repo-issues').select('using_ai').ilike('participant_id', participant_id).eq('issue_id', int(issue_id)).execute()
 
     using_ai = False
     if repo_result.data and len(repo_result.data) > 0:
         using_ai = repo_result.data[0].get('using_ai') is True
 
     # Check post-PR table for survey responses
-    post_pr_result = supabase_client.table('post-PR').select('nasa_tlx_1, ai_code_quality').eq('participant_id', participant_id).eq('issue_id', int(issue_id)).execute()
+    post_pr_result = supabase_client.table('post-PR').select('nasa_tlx_1, ai_code_quality').ilike('participant_id', participant_id).eq('issue_id', int(issue_id)).execute()
 
     nasa_tlx_1_value = None
     ai_code_quality_value = None
@@ -1060,12 +1065,12 @@ def save_post_issue_responses(participant_id: str, issue_id: int, responses: dic
     }
 
     # Check if record already exists, then update or insert accordingly
-    existing_record = supabase_client.table('post-PR').select('participant_id').eq('participant_id', participant_id).eq('issue_id', issue_id).execute()
+    existing_record = supabase_client.table('post-PR').select('participant_id').ilike('participant_id', participant_id).eq('issue_id', issue_id).execute()
 
     if existing_record.data and len(existing_record.data) > 0:
         # Record exists, update it
         print(f"Updating existing record for participant {participant_id}, issue {issue_id}")
-        result = supabase_client.table('post-PR').update(data).eq('participant_id', participant_id).eq('issue_id', issue_id).execute()
+        result = supabase_client.table('post-PR').update(data).ilike('participant_id', participant_id).eq('issue_id', issue_id).execute()
     else:
         # Record doesn't exist, insert new one
         print(f"Inserting new record for participant {participant_id}, issue {issue_id}")
@@ -1126,14 +1131,14 @@ def save_pr_closed_responses(participant_id: str, issue_id: int, responses: dict
 
     # Check if a record already exists for this participant/issue pair
     existing = table.select('participant_id')\
-        .eq('participant_id', participant_id)\
+        .ilike('participant_id', participant_id)\
         .eq('issue_id', issue_id)\
         .execute()
 
     if existing.data and len(existing.data) > 0:
         print("Existing PR-closed record found. Updating...")
         result = table.update(responses)\
-            .eq('participant_id', participant_id)\
+            .ilike('participant_id', participant_id)\
             .eq('issue_id', issue_id)\
             .execute()
     else:
@@ -1178,12 +1183,12 @@ def save_post_issue_reflection(participant_id: str, issue_id: int, responses: di
     data = responses
 
     # Check if record exists
-    existing_record = supabase_client.table('post-PR').select('participant_id').eq('participant_id', participant_id).eq('issue_id', issue_id).execute()
+    existing_record = supabase_client.table('post-PR').select('participant_id').ilike('participant_id', participant_id).eq('issue_id', issue_id).execute()
 
     if existing_record.data and len(existing_record.data) > 0:
         # Record exists, update it with reflection data
         print(f"Updating existing record with reflection data for participant {participant_id}, issue {issue_id}")
-        result = supabase_client.table('post-PR').update(data).eq('participant_id', participant_id).eq('issue_id', issue_id).execute()
+        result = supabase_client.table('post-PR').update(data).ilike('participant_id', participant_id).eq('issue_id', issue_id).execute()
 
         print(f"Database operation result: {result}")
 
@@ -1248,7 +1253,7 @@ def save_post_exp1_responses(participant_id: str, responses: dict):
 
             # Strategy 3: Try update only (in case record exists)
             try:
-                result = supabase_client.table('post-exp1').update(data).eq('participant_id', participant_id).execute()
+                result = supabase_client.table('post-exp1').update(data).ilike('participant_id', participant_id).execute()
                 print(f"Update successful")
             except Exception as update_error:
                 print(f"❌ All strategies failed. Update error: {update_error}")
@@ -1327,7 +1332,7 @@ def get_issue_needing_survey(participant_id: str):
     # Find issues where is_completed=True
     result = supabase_client.table('repo-issues')\
         .select('*')\
-        .eq('participant_id', participant_id)\
+        .ilike('participant_id', participant_id)\
         .eq('is_completed', True)\
         .execute()
 
@@ -1337,7 +1342,7 @@ def get_issue_needing_survey(participant_id: str):
             using_ai = issue.get('using_ai') is True
 
             # Check post-PR table for survey responses
-            post_pr_result = supabase_client.table('post-PR').select('nasa_tlx_1, ai_code_quality').eq('participant_id', participant_id).eq('issue_id', int(issue_id)).execute()
+            post_pr_result = supabase_client.table('post-PR').select('nasa_tlx_1, ai_code_quality').ilike('participant_id', participant_id).eq('issue_id', int(issue_id)).execute()
 
             nasa_tlx_1 = None
             ai_code_quality = None
@@ -1387,7 +1392,7 @@ def check_participant_has_more_issues(participant_id: str):
     print(f"Participant ID: {participant_id}")
 
     # Get all issues assigned to this participant
-    all_issues = supabase_client.table('repo-issues').select('*').eq('participant_id', participant_id).execute()
+    all_issues = supabase_client.table('repo-issues').select('*').ilike('participant_id', participant_id).execute()
 
     if not all_issues.data:
         print(f"No issues found for participant {participant_id}")
@@ -1440,7 +1445,7 @@ def get_missing_post_pr_surveys(participant_id: str):
 
     completed = supabase_client.table('repo-issues')\
         .select('issue_id, issue_url, using_ai')\
-        .eq('participant_id', participant_id)\
+        .ilike('participant_id', participant_id)\
         .eq('is_completed', True)\
         .execute()
 
@@ -1462,7 +1467,7 @@ def get_missing_post_pr_surveys(participant_id: str):
 
         post_pr = supabase_client.table('post-PR')\
             .select('nasa_tlx_1, ai_code_quality')\
-            .eq('participant_id', participant_id)\
+            .ilike('participant_id', participant_id)\
             .eq('issue_id', int(issue_id))\
             .execute()
 
@@ -1521,7 +1526,7 @@ def check_post_exp1_completed(participant_id: str):
 
     result = supabase_client.table('post-exp1')\
         .select('workflow_comparison, ai_helpful_tasks, ai_wish_different, ai_suggestion_decisions')\
-        .eq('participant_id', participant_id)\
+        .ilike('participant_id', participant_id)\
         .execute()
 
     completed = False

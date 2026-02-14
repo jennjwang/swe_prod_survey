@@ -143,7 +143,7 @@ def issue_assignment_page():
         check_result = check_all_issues_assigned(participant_id)
 
         if check_result['success']:
-            assigned_count = check_result.get('count', 0)
+            assigned_count = check_result.get('count') or 0  # guard against None
             has_assignments = assigned_count > 0
             limited_inventory = assigned_count < REQUIRED_ISSUE_COUNT
 

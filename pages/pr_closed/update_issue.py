@@ -56,14 +56,14 @@ def update_issue_page():
         # Fetch total assigned issues for this participant
         assigned_result = supabase_client.table('repo-issues')\
             .select('issue_id')\
-            .eq('participant_id', participant_id)\
+            .ilike('participant_id', participant_id)\
             .execute()
         total_assigned = len(assigned_result.data) if assigned_result.data else 0
 
         # Fetch issues that are either merged or closed
         result = supabase_client.table('repo-issues')\
             .select('*')\
-            .eq('participant_id', participant_id)\
+            .ilike('participant_id', participant_id)\
             .or_('is_merged.eq.true,is_closed.eq.true')\
             .execute()
 
@@ -72,7 +72,7 @@ def update_issue_page():
         # Fetch issues that already have pr-closed surveys completed (learn_4 is not null)
         pr_closed_result = supabase_client.table('pr-closed')\
             .select('issue_id, learn_4')\
-            .eq('participant_id', participant_id)\
+            .ilike('participant_id', participant_id)\
             .not_.is_('learn_4', 'null')\
             .execute()
         completed_survey_issue_ids = {int(item['issue_id']) for item in pr_closed_result.data} if pr_closed_result.data else set()
@@ -98,7 +98,7 @@ def update_issue_page():
             try:
                 post_study_result = supabase_client.table('post-study')\
                     .select('participant_id, ai_responsibility, value_reading_issue')\
-                    .eq('participant_id', participant_id)\
+                    .ilike('participant_id', participant_id)\
                     .not_.is_('ai_responsibility', 'null')\
                     .not_.is_('value_reading_issue', 'null')\
                     .execute()
@@ -310,7 +310,7 @@ def update_issue_page():
             try:
                 pr_closed_data = supabase_client.table('pr-closed')\
                     .select('collab_1, engage_1, learn_1')\
-                    .eq('participant_id', participant_id)\
+                    .ilike('participant_id', participant_id)\
                     .eq('issue_id', selected_issue_id)\
                     .execute()
 

@@ -170,7 +170,7 @@ def code_activities_value_page():
                 # Check if record exists
                 existing = supabase_client.table('post-study')\
                     .select('participant_id')\
-                    .eq('participant_id', participant_id)\
+                    .ilike('participant_id', participant_id)\
                     .execute()
 
                 if existing.data and len(existing.data) > 0:
@@ -178,7 +178,7 @@ def code_activities_value_page():
                     # First get existing data
                     existing_data = supabase_client.table('post-study')\
                         .select('*')\
-                        .eq('participant_id', participant_id)\
+                        .ilike('participant_id', participant_id)\
                         .execute()
                     
                     if existing_data.data and len(existing_data.data) > 0:
@@ -188,7 +188,7 @@ def code_activities_value_page():
                     
                     result = supabase_client.table('post-study')\
                         .update(db_data)\
-                        .eq('participant_id', participant_id)\
+                        .ilike('participant_id', participant_id)\
                         .execute()
                 else:
                     # Insert new record (shouldn't happen if AI responsibility was saved first)
@@ -221,14 +221,14 @@ def code_activities_value_page():
                 # Get total assigned issues
                 assigned_result = supabase_client.table('repo-issues')\
                     .select('issue_id', count='exact')\
-                    .eq('participant_id', participant_id)\
+                    .ilike('participant_id', participant_id)\
                     .execute()
                 total_assigned = assigned_result.count if assigned_result.count is not None else (len(assigned_result.data) if assigned_result.data else 0)
 
                 # Get merged or closed issues
                 closed_result = supabase_client.table('repo-issues')\
                     .select('issue_id', count='exact')\
-                    .eq('participant_id', participant_id)\
+                    .ilike('participant_id', participant_id)\
                     .or_('is_merged.eq.true,is_closed.eq.true')\
                     .execute()
                 total_closed = closed_result.count if closed_result.count is not None else (len(closed_result.data) if closed_result.data else 0)

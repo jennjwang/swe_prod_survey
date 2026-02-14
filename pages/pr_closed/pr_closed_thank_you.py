@@ -19,14 +19,14 @@ def pr_closed_thank_you_page():
             # Get total number of assigned issues
             all_assigned = supabase_client.table('repo-issues')\
                 .select('issue_id')\
-                .eq('participant_id', participant_id)\
+                .ilike('participant_id', participant_id)\
                 .execute()
             total_assigned = len(all_assigned.data) if all_assigned.data else 0
 
             # Get number of merged or closed issues
             closed_issues = supabase_client.table('repo-issues')\
                 .select('issue_id')\
-                .eq('participant_id', participant_id)\
+                .ilike('participant_id', participant_id)\
                 .or_('is_merged.eq.true,is_closed.eq.true')\
                 .execute()
             total_closed = len(closed_issues.data) if closed_issues.data else 0
@@ -34,7 +34,7 @@ def pr_closed_thank_you_page():
             # Get number of completed pr-closed surveys (where learn_4 is not null)
             completed_surveys = supabase_client.table('pr-closed')\
                 .select('issue_id')\
-                .eq('participant_id', participant_id)\
+                .ilike('participant_id', participant_id)\
                 .not_.is_('learn_4', 'null')\
                 .execute()
 
@@ -52,7 +52,7 @@ def pr_closed_thank_you_page():
                 # Check if post-study survey is already complete
                 existing = supabase_client.table('post-study')\
                     .select('participant_id, ai_responsibility, value_reading_issue')\
-                    .eq('participant_id', participant_id)\
+                    .ilike('participant_id', participant_id)\
                     .not_.is_('ai_responsibility', 'null')\
                     .not_.is_('value_reading_issue', 'null')\
                     .execute()

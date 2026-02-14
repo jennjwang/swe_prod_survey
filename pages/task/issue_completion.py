@@ -39,7 +39,7 @@ def issue_completion_page():
         try:
             counts_result = supabase_client.table('repo-issues')\
                 .select('is_completed', count='exact')\
-                .eq('participant_id', participant_id)\
+                .ilike('participant_id', participant_id)\
                 .execute()
             assigned_count = counts_result.count if counts_result.count is not None else (len(counts_result.data) if counts_result.data else 0)
             completed_count = sum(1 for issue in (counts_result.data or []) if issue.get('is_completed'))

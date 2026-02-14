@@ -97,14 +97,14 @@ def end_of_study_thank_you_page():
                 # Check if record exists
                 existing = supabase_client.table('post-study')\
                     .select('participant_id')\
-                    .eq('participant_id', participant_id)\
+                    .ilike('participant_id', participant_id)\
                     .execute()
 
                 if existing.data and len(existing.data) > 0:
                     # Update existing record
                     result = supabase_client.table('post-study')\
                         .update(db_data)\
-                        .eq('participant_id', participant_id)\
+                        .ilike('participant_id', participant_id)\
                         .execute()
                 else:
                     # Insert new record

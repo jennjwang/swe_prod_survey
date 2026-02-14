@@ -45,7 +45,9 @@ def participant_id_page():
                 validation_result = validate_participant_id(participant_id)
             
             if validation_result['valid']:
-                # ID is valid, save it
+                # Normalize to lowercase — all DB queries now use ilike for
+                # participant_id so casing doesn't matter
+                participant_id = participant_id.strip().lower()
                 st.session_state['survey_responses']['participant_id'] = participant_id
                 
                 # Check progress to see if they should skip ahead
@@ -141,21 +143,21 @@ def participant_id_page():
                                 # Check total assigned issues
                                 assigned_result = supabase_client.table('repo-issues')\
                                     .select('issue_id')\
-                                    .eq('participant_id', participant_id)\
+                                    .ilike('participant_id', participant_id)\
                                     .execute()
                                 total_assigned = len(assigned_result.data) if assigned_result.data else 0
 
                                 # Check for merged/closed PRs
                                 reviewed_result = supabase_client.table('repo-issues')\
                                     .select('issue_id')\
-                                    .eq('participant_id', participant_id)\
+                                    .ilike('participant_id', participant_id)\
                                     .or_('is_merged.eq.true,is_closed.eq.true')\
                                     .execute()
 
                                 # Check for completed PR surveys (learn_4 is not null)
                                 pr_closed_result = supabase_client.table('pr-closed')\
                                     .select('issue_id, learn_4')\
-                                    .eq('participant_id', participant_id)\
+                                    .ilike('participant_id', participant_id)\
                                     .not_.is_('learn_4', 'null')\
                                     .execute()
 
@@ -184,7 +186,7 @@ def participant_id_page():
                                     try:
                                         post_study_result = supabase_client.table('post-study')\
                                             .select('participant_id, ai_responsibility, value_reading_issue')\
-                                            .eq('participant_id', participant_id)\
+                                            .ilike('participant_id', participant_id)\
                                             .not_.is_('ai_responsibility', 'null')\
                                             .not_.is_('value_reading_issue', 'null')\
                                             .execute()
@@ -209,7 +211,7 @@ def participant_id_page():
                                     try:
                                         post_exp1_result = supabase_client.table('post-exp1')\
                                             .select('workflow_comparison, ai_helpful_tasks, ai_wish_different, ai_suggestion_decisions')\
-                                            .eq('participant_id', participant_id)\
+                                            .ilike('participant_id', participant_id)\
                                             .execute()
 
                                         if post_exp1_result.data and len(post_exp1_result.data) > 0:
