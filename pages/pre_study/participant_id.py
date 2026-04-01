@@ -207,8 +207,9 @@ def participant_id_page():
                                         st.rerun()
                                 except Exception as e:
                                     print(f"Error checking post-exp1 status: {e}")
-                                    # On error, assume done and continue to pr-closed flow
-                                    post_exp1_done = True
+                                    # On error, route to post-exp1 to be safe
+                                    st.session_state['page'] = 14  # study_val_page
+                                    st.rerun()
 
                                 if has_pending_pr_surveys:
                                     # Has reviewed PRs needing updates, route to update page
